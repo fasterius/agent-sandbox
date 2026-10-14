@@ -13,8 +13,13 @@
 ~/home
 ~/learning
 ~/opt
-~/projects
 ~/teaching
+
+# Project directories
+~/projects
+~/projects/[0-9][0-9][0-9][0-9]-*/**
+~/projects/[0-9][0-9][0-9][0-9][0-9]-*/**
+~/projects/personal/**
 
 # Sandbox home directories (which contains credentials)
 ~/.claude-sandbox-home-*/**

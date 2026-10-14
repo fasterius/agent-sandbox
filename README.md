@@ -66,6 +66,15 @@ been stored in the `~/.claude-sandbox-home-egress-filtered` directory.
 Add an anchored regular expression line to `filter` (e.g. `^some\.host\.com$`)
 and restart using the `restart-proxy.sh` script.
 
+## Blocked directories
+
+The wrapper scripts refuse to run in any directory listed in
+[`blocked-dirs`](./blocked-dirs), such as your home directory, credential
+directories like `~/.ssh` and system directories; add and remove entries as you
+see fit. A plain entry blocks only that exact directory, while an entry ending
+in `/**` also blocks everything below it. Symlinks are resolved before matching
+and matching is case-insensitive.
+
 ## Unrestricted egress
 
 It is also possible to run this setup with no egress limits, just execute

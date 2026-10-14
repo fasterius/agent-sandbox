@@ -1,0 +1,46 @@
+# Directories the sandbox wrapper scripts refuse to run in
+
+# Home directories
+~
+~/Desktop
+~/Documents
+~/Downloads
+~/Movies
+~/Music
+~/Pictures
+~/Public
+~/docs
+~/home
+~/learning
+~/opt
+~/projects
+~/teaching
+
+# Sandbox home directories (which contains credentials)
+~/.claude-sandbox-home-*/**
+
+# Credentials and configuration
+~/.ssh/**
+~/.docker/**
+~/.config/**
+~/.local/**
+~/.claude/**
+
+# Application data on macOS
+~/Library/**
+
+# System directories
+/
+/Users
+/home
+/Volumes
+/Applications/**
+/Library/**
+/System/**
+/bin/**
+/sbin/**
+/usr/**
+/etc/**
+/private/etc/**
+/var/**
+/private/var/**

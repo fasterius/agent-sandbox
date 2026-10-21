@@ -1,0 +1,33 @@
+# Shared service definitions, used via `extends` by the per-agent compose
+# files; never run directly
+services:
+  hardened:
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  proxy:
+    extends:
+      service: hardened
+    image: kalaksi/tinyproxy:latest
+    restart: unless-stopped
+    volumes:
+      - ./tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
+
+  agent:
+    extends:
+      service: hardened
+    # Interactivity
+    stdin_open: true
+    tty: true
+    environment:
+      HTTPS_PROXY: http://proxy:8888
+      HTTP_PROXY: http://proxy:8888
+      NO_PROXY: localhost,127.0.0.1
+    volumes:
+      # The `PROJECT_DIR` env variable is set in the helper scripts
+      - ${PROJECT_DIR:?PROJECT_DIR must be set}:/home/dev/workspace
+    mem_limit: 4g
+    cpus: 2
+    pids_limit: 512

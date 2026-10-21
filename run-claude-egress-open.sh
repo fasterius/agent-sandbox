@@ -24,5 +24,5 @@ export COMPOSE_FILE="$SANDBOX_DIR/compose.yml:$SANDBOX_DIR/compose-egress-open.y
 export COMPOSE_PROJECT_NAME="claude-sandbox-egress-open"
 
 # Run Claude interactively, forwarding any extra args; skip the proxy using
-# `--no-deps` 
+# `--no-deps`
 docker compose run --rm --no-deps claude claude "$@"

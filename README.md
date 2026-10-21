@@ -107,6 +107,16 @@ see fit. A plain entry blocks only that exact directory, while an entry ending
 in `/**` also blocks everything below it. Symlinks are resolved before matching
 and matching is case-insensitive.
 
+## Resource limits
+
+The agent containers are limited to 4 GB of memory, 2 CPUs and 512 processes,
+which can be overridden:
+
+```bash
+SANDBOX_MEMORY=16g SANDBOX_CPUS=6 SANDBOX_PIDS=4096 \
+    /path/to/this/repo/run-agent.sh claude filtered
+```
+
 ## Unrestricted egress
 
 It is also possible to run this setup with no egress limits, using the `open`

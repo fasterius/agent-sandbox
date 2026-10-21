@@ -28,6 +28,9 @@ services:
     volumes:
       # The `PROJECT_DIR` env variable is set in the helper scripts
       - ${PROJECT_DIR:?PROJECT_DIR must be set}:/home/dev/workspace
-    mem_limit: 4g
-    cpus: 2
-    pids_limit: 512
+    # Upper limits rather than reservations; override per run with the
+    # `SANDBOX_MEMORY`, `SANDBOX_CPUS` and `SANDBOX_PIDS` environment variables.
+    # The PID limit counts threads as well as processes
+    mem_limit: ${SANDBOX_MEMORY:-4g}
+    cpus: ${SANDBOX_CPUS:-2}
+    pids_limit: ${SANDBOX_PIDS:-512}

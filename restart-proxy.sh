@@ -17,7 +17,7 @@ SANDBOX_DIR="$(dirname "$0")"
 # run script, so that the proxy of that compose project is the one restarted
 case "$1" in
     claude)
-        export COMPOSE_FILE="$SANDBOX_DIR/compose.yml"
+        export COMPOSE_FILE="$SANDBOX_DIR/compose-claude.yml"
         export COMPOSE_PROJECT_NAME="claude-sandbox-egress-filtered"
         ;;
     opencode)

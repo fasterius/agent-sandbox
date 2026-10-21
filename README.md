@@ -11,15 +11,17 @@ host (see [OpenCode with a local model](#opencode-with-a-local-model)).
   things it can reach are the `proxy` container and, for OpenCode, a forwarder
   to Ollama on the host.
 - The `proxy` (tinyproxy) container is the sole egress path, and only forwards
-  requests to hosts matching the agent's allow-list ([`filter`](./filter) for
-  Claude Code, [`filter-opencode`](./filter-opencode) for OpenCode): package
-  and workflow registries such as Conda, Pixi, Nextflow and Bioconductor, plus
-  the Anthropic API for Claude Code.
+  requests to hosts matching the agent's allow-list
+  ([`filter-claude`](./filter-claude) for Claude Code,
+  [`filter-opencode`](./filter-opencode) for OpenCode): package and workflow
+  registries such as Conda, Pixi, Nextflow and Bioconductor, plus the
+  Anthropic API for Claude Code.
 - All containers run with all Linux capabilities dropped (`cap_drop: ALL`)
   and `no-new-privileges`, and the agent containers have memory/CPU/PID
   limits.
 - Either agent can instead be run with unrestricted egress, keeping the rest
-  of the hardening (see [Unrestricted egress](#unrestricted-egress)).
+  of the hardening (see [Unrestricted egress](#unrestricted-egress) and
+  [OpenCode with unrestricted egress](#opencode-with-unrestricted-egress)).
 
 ## Requirements
 
@@ -32,7 +34,7 @@ used during build but are required, so initialise them to the current
 directory):
 
 ```bash
-PROJECT_DIR=. CLAUDE_HOME=. docker compose build
+PROJECT_DIR=. CLAUDE_HOME=. docker compose -f compose-claude.yml build
 ```
 
 You can then run Claude Code with egress filtering like so:
@@ -73,9 +75,10 @@ been stored in the `~/.claude-sandbox-home-egress-filtered` directory.
 
 ## Extending the allow-list
 
-Add an anchored regular expression line to `filter` (e.g. `^some\.host\.com$`)
-and restart the proxy with the [`restart-proxy.sh`](./restart-proxy.sh) script,
-naming the agent whose allow-list changed:
+Add an anchored regular expression line to the agent's allow-list,
+`filter-claude` or `filter-opencode` (e.g. `^some\.host\.com$`), and restart
+the proxy with the [`restart-proxy.sh`](./restart-proxy.sh) script, naming the
+agent whose allow-list changed:
 
 ```bash
 /path/to/this/repo/restart-proxy.sh claude
@@ -137,7 +140,7 @@ modes, but is otherwise separate:
   `restart-proxy.sh opencode`
 - Its own home directory, `~/.opencode-sandbox-home-egress-filtered`
 
-### Unrestricted egress
+### OpenCode with unrestricted egress
 
 As for Claude Code, OpenCode can be run without egress limits:
 

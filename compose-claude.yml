@@ -4,7 +4,7 @@ services:
       file: compose-common.yml
       service: proxy
     volumes:
-      - ./filter:/etc/tinyproxy/filter:ro
+      - ./filter-claude:/etc/tinyproxy/filter:ro
     networks:
       - claude-net
       - proxy-egress

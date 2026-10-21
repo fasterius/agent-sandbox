@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Sourced by the wrapper scripts: exits with an error if the current directory
+# Sourced by `run-agent.sh`: exits with an error if the current directory
 # matches an entry in `blocked-dirs`. Expects `SANDBOX_DIR` to be set.
 
 _check_dir() {

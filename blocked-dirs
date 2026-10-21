@@ -1,4 +1,4 @@
-# Directories the sandbox wrapper scripts refuse to run in
+# Directories the sandbox run script refuses to run in
 
 # Home directories
 ~

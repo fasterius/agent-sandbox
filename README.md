@@ -41,15 +41,16 @@ You can then run Claude Code with egress filtering like so:
 
 ```bash
 cd /path/to/your/project
-/path/to/this/repo/run-claude-egress-filtered.sh [optional args]
+/path/to/this/repo/run-agent.sh claude filtered [optional args]
 ```
 
-The `run-claude-egress-filtered.sh` script can be run from any directory: it
-uses `$PWD` as the project to mount. Any extra arguments are forwarded to the
-`claude` CLI, _e.g._:
+The [`run-agent.sh`](./run-agent.sh) script takes the agent (`claude` or
+`opencode`) and the egress mode (`filtered` or `open`), and can be run from
+any directory: it uses `$PWD` as the project to mount. Any extra arguments are
+forwarded to the agent's CLI, _e.g._:
 
 ```bash
-run-claude-egress-filtered.sh -p "summarise this repository"
+run-agent.sh claude filtered -p "summarise this repository"
 ```
 
 The first time you run it, Docker will build the `claude` image from the
@@ -67,9 +68,9 @@ been stored in the `~/.claude-sandbox-home-egress-filtered` directory.
   config, credentials, and session history _between runs of the sandbox_. It
   contains real secrets (`.credentials.json`, `.claude.json`) once you've logged
   in — treat it like any other credentials directory.
-  `run-claude-egress-filtered.sh` sets this to
-  `~/.claude-sandbox-home-egress-filtered`; `run-claude-egress-open.sh` uses a
-  separate `~/.claude-sandbox-home-egress-open` (see [Unrestricted
+  The `filtered` mode sets this to `~/.claude-sandbox-home-egress-filtered`,
+  while the `open` mode uses a separate
+  `~/.claude-sandbox-home-egress-open` (see [Unrestricted
   egress](#unrestricted-egress)), so the two modes can have their own
   `CLAUDE.md` and credentials.
 
@@ -86,7 +87,7 @@ agent whose allow-list changed:
 
 ## Blocked directories
 
-The wrapper scripts refuse to run in any directory listed in
+The run script refuses to run in any directory listed in
 [`blocked-dirs`](./blocked-dirs), such as your home directory, credential
 directories like `~/.ssh` and system directories; add and remove entries as you
 see fit. A plain entry blocks only that exact directory, while an entry ending
@@ -95,19 +96,19 @@ and matching is case-insensitive.
 
 ## Unrestricted egress
 
-It is also possible to run this setup with no egress limits, just execute
-`run-claude-egress-open.sh` instead of `run-claude-egress-filtered.sh`:
+It is also possible to run this setup with no egress limits, using the `open`
+mode instead of `filtered`:
 
 ```bash
 cd /path/to/your/project
-/path/to/this/repo/run-claude-egress-open.sh [optional args]
+/path/to/this/repo/run-agent.sh claude open [optional args]
 ```
 
 The other hardening (dropped capabilities, `no-new-privileges`, memory/CPU/PID
 limits) still applies; only the network restriction is lifted.
 
 This mode also uses its own `~/.claude-sandbox-home-egress-open` directory
-rather than the one `run-claude-egress-filtered.sh` uses, so it can have
+rather than the one the `filtered` mode uses, so it can have
 separate `CLAUDE.md` instructions, config and credentials from the
 egress-filtered sandbox.
 
@@ -118,7 +119,7 @@ a model served by [Ollama](https://ollama.com).
 
 ```bash
 cd /path/to/your/project
-/path/to/this/repo/run-opencode-egress-filtered.sh [optional args]
+/path/to/this/repo/run-agent.sh opencode filtered [optional args]
 ```
 
 The OpenCode image is built automatically on first run, or manually with:
@@ -146,7 +147,7 @@ As for Claude Code, OpenCode can be run without egress limits:
 
 ```bash
 cd /path/to/your/project
-/path/to/this/repo/run-opencode-egress-open.sh [optional args]
+/path/to/this/repo/run-agent.sh opencode open [optional args]
 ```
 
 This layers [`compose-opencode-egress-open.yml`](./compose-opencode-egress-open.yml)

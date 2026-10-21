@@ -1,5 +1,5 @@
 # OpenCode against a local Ollama server running natively on the host (where
-# it has GPU access); for use with the `run-opencode-*.sh` scripts
+# it has GPU access); for use with `run-agent.sh opencode`
 services:
   proxy:
     extends:

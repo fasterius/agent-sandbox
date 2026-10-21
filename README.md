@@ -12,10 +12,10 @@ host (see [OpenCode with a local model](#opencode-with-a-local-model)).
   to Ollama on the host.
 - The `proxy` (tinyproxy) container is the sole egress path, and only forwards
   requests to hosts matching the agent's allow-list
-  ([`filter-claude`](./filter-claude) for Claude Code,
-  [`filter-opencode`](./filter-opencode) for OpenCode): package and workflow
-  registries such as Conda, Pixi, Nextflow and Bioconductor, plus the
-  Anthropic API for Claude Code.
+  ([`proxy/filter-claude`](./proxy/filter-claude) for Claude Code,
+  [`proxy/filter-opencode`](./proxy/filter-opencode) for OpenCode): package
+  and workflow registries such as Conda, Pixi, Nextflow and Bioconductor, plus
+  the Anthropic API for Claude Code.
 - All containers run with all Linux capabilities dropped (`cap_drop: ALL`)
   and `no-new-privileges`, and the agent containers have memory/CPU/PID
   limits.
@@ -27,14 +27,27 @@ host (see [OpenCode with a local model](#opencode-with-a-local-model)).
 
 - Docker and Docker Compose
 
+## Repository layout
+
+- [`run-agent.sh`](./run-agent.sh) and
+  [`restart-proxy.sh`](./restart-proxy.sh): the entry points
+- [`blocked-dirs`](./blocked-dirs): directories the sandbox refuses to run in
+- [`Dockerfile`](./Dockerfile): a shared base stage plus one target per agent
+- [`compose/`](./compose): shared hardening (`common.yml`) plus a compose file
+  per agent and an override per agent for the unrestricted egress mode
+- [`proxy/`](./proxy): the tinyproxy config and each agent's allow-list
+- [`opencode/`](./opencode): default OpenCode configs, copied into its home
+  directory on first run
+- [`lib/`](./lib): helpers sourced by the scripts
+
 ## Usage
 
-First build the images using `Docker compose` (the environment variables are not
+First build the images using Docker Compose (the environment variables are not
 used during build but are required, so initialise them to the current
 directory):
 
 ```bash
-PROJECT_DIR=. CLAUDE_HOME=. docker compose -f compose-claude.yml build
+PROJECT_DIR=. CLAUDE_HOME=. docker compose -f compose/claude.yml build
 ```
 
 You can then run Claude Code with egress filtering like so:
@@ -54,7 +67,7 @@ run-agent.sh claude filtered -p "summarise this repository"
 ```
 
 The first time you run it, Docker will build the `claude` image from the
-included [`Dockerfile`](./Dockerfile)). You'll also have to authenticate outside
+included [`Dockerfile`](./Dockerfile). You'll also have to authenticate outside
 of the sandbox, but subsequent sessions will use the credentials that have now
 been stored in the `~/.claude-sandbox-home-egress-filtered` directory.
 
@@ -77,9 +90,9 @@ been stored in the `~/.claude-sandbox-home-egress-filtered` directory.
 ## Extending the allow-list
 
 Add an anchored regular expression line to the agent's allow-list,
-`filter-claude` or `filter-opencode` (e.g. `^some\.host\.com$`), and restart
-the proxy with the [`restart-proxy.sh`](./restart-proxy.sh) script, naming the
-agent whose allow-list changed:
+`proxy/filter-claude` or `proxy/filter-opencode` (_e.g._ `^some\.host\.com$`),
+and restart the proxy with the [`restart-proxy.sh`](./restart-proxy.sh)
+script, naming the agent whose allow-list changed:
 
 ```bash
 /path/to/this/repo/restart-proxy.sh claude
@@ -125,19 +138,19 @@ cd /path/to/your/project
 The OpenCode image is built automatically on first run, or manually with:
 
 ```bash
-PROJECT_DIR=. OPENCODE_HOME=. docker compose -f compose-opencode.yml build
+PROJECT_DIR=. OPENCODE_HOME=. docker compose -f compose/opencode.yml build
 ```
 
-This mode shares the hardening ([`compose-common.yml`](./compose-common.yml)),
+This mode shares the hardening ([`compose/common.yml`](./compose/common.yml)),
 the base image layers and the blocked-directories check with the Claude Code
 modes, but is otherwise separate:
 
 - Its own image (`opencode-sandbox`), built from the `opencode` target of the
   [`Dockerfile`](./Dockerfile)
-- Its own compose file ([`compose-opencode.yml`](./compose-opencode.yml)),
+- Its own compose file ([`compose/opencode.yml`](./compose/opencode.yml)),
   project name and networks
-- Its own allow-list, [`filter-opencode`](./filter-opencode), which does not
-  include Anthropic's endpoints; apply changes to it with
+- Its own allow-list, [`proxy/filter-opencode`](./proxy/filter-opencode),
+  which does not include Anthropic's endpoints; apply changes to it with
   `restart-proxy.sh opencode`
 - Its own home directory, `~/.opencode-sandbox-home-egress-filtered`
 
@@ -150,22 +163,24 @@ cd /path/to/your/project
 /path/to/this/repo/run-agent.sh opencode open [optional args]
 ```
 
-This layers [`compose-opencode-egress-open.yml`](./compose-opencode-egress-open.yml)
-on top of `compose-opencode.yml`, skipping the proxy and re-enabling model
+This layers [`compose/opencode-egress-open.yml`](./compose/opencode-egress-open.yml)
+on top of `compose/opencode.yml`, skipping the proxy and re-enabling model
 catalogue fetching and language server downloads. Ollama is still reached
 through the forwarder, and the mode uses its own `~/.opencode-sandbox-home-egress-open`
 home directory.
 
 ### Configuring the model
 
-On first run, [`opencode-default.json`](./opencode-default.json) is copied to
-`.config/opencode/opencode.json` in the mode's home directory; edit that copy
-to add or change models. Model names must match those listed by `ollama list`
-on the host.
+On first run,
+[`opencode/opencode-default.json`](./opencode/opencode-default.json) is
+copied to `.config/opencode/opencode.json` in the mode's home directory; edit
+that copy to add or change models. Model names must match those listed by
+`ollama list` on the host.
 
-A TUI config, [`tui-default.json`](./tui-default.json), is copied to
-`.config/opencode/tui.json` alongside it; this enables attention desktop
-notifications when the terminal is blurred, with the attention sound disabled.
+A TUI config, [`opencode/tui-default.json`](./opencode/tui-default.json), is
+copied to `.config/opencode/tui.json` alongside it; this enables attention
+desktop notifications when the terminal is blurred, with the attention sound
+disabled.
 
 OpenCode needs a context window of at least 64k tokens, which is larger than
 Ollama's default.

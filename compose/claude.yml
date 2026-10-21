@@ -1,20 +1,20 @@
 services:
   proxy:
     extends:
-      file: compose-common.yml
+      file: common.yml
       service: proxy
     volumes:
-      - ./filter-claude:/etc/tinyproxy/filter:ro
+      - ../proxy/filter-claude:/etc/tinyproxy/filter:ro
     networks:
       - claude-net
       - proxy-egress
 
   claude:
     extends:
-      file: compose-common.yml
+      file: common.yml
       service: agent
     build:
-      context: .
+      context: ..
       target: claude
       platforms:
         - linux/amd64

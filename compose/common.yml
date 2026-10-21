@@ -13,7 +13,7 @@ services:
     image: kalaksi/tinyproxy:latest
     restart: unless-stopped
     volumes:
-      - ./tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
+      - ../proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
 
   agent:
     extends:

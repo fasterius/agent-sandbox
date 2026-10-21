@@ -3,8 +3,9 @@ set -euo pipefail
 
 # Run an agent in the sandbox with the current directory as the project.
 # In the `filtered` mode all egress goes through the proxy and its allow-list
-# (`filter-<agent>`); the `open` mode layers `compose-<agent>-egress-open.yml`
-# on top of `compose-<agent>.yml` to drop the proxy and allow any egress.
+# (`proxy/filter-<agent>`); the `open` mode layers
+# `compose/<agent>-egress-open.yml` on top of `compose/<agent>.yml` to drop
+# the proxy and allow any egress.
 
 usage() {
     echo "Usage: $(basename "$0") <claude|opencode> <filtered|open>" \
@@ -22,7 +23,7 @@ case "$MODE" in filtered | open) ;; *) usage ;; esac
 
 # Refuse to run in any directory listed in `blocked-dirs`
 SANDBOX_DIR="$(dirname "$0")"
-source "$SANDBOX_DIR/check-dir.sh"
+source "$SANDBOX_DIR/lib/check-dir.sh"
 
 # Use the current directory as the project
 export PROJECT_DIR="$PWD"
@@ -32,9 +33,9 @@ export PROJECT_DIR="$PWD"
 # external home directory, so that each can have its own config and
 # credentials
 export COMPOSE_PROJECT_NAME="$AGENT-sandbox-egress-$MODE"
-export COMPOSE_FILE="$SANDBOX_DIR/compose-$AGENT.yml"
+export COMPOSE_FILE="$SANDBOX_DIR/compose/$AGENT.yml"
 if [[ "$MODE" == "open" ]]; then
-    COMPOSE_FILE="$COMPOSE_FILE:$SANDBOX_DIR/compose-$AGENT-egress-open.yml"
+    COMPOSE_FILE="$COMPOSE_FILE:$SANDBOX_DIR/compose/$AGENT-egress-open.yml"
 fi
 AGENT_HOME="$HOME/.$AGENT-sandbox-home-egress-$MODE"
 mkdir -p "$AGENT_HOME"
@@ -58,8 +59,9 @@ case "$AGENT" in
         ;;
     opencode)
         export OPENCODE_HOME="$AGENT_HOME"
-        seed_config opencode-default.json .config/opencode/opencode.json
-        seed_config tui-default.json .config/opencode/tui.json
+        seed_config opencode/opencode-default.json \
+            .config/opencode/opencode.json
+        seed_config opencode/tui-default.json .config/opencode/tui.json
         SERVICES="ollama"
         ;;
 esac

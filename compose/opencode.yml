@@ -3,10 +3,10 @@
 services:
   proxy:
     extends:
-      file: compose-common.yml
+      file: common.yml
       service: proxy
     volumes:
-      - ./filter-opencode:/etc/tinyproxy/filter:ro
+      - ../proxy/filter-opencode:/etc/tinyproxy/filter:ro
     networks:
       - opencode-net
       - proxy-egress
@@ -15,7 +15,7 @@ services:
   # that the agent can reach it without any other route out
   ollama:
     extends:
-      file: compose-common.yml
+      file: common.yml
       service: hardened
     image: alpine/socat:latest
     restart: unless-stopped
@@ -37,10 +37,10 @@ services:
 
   opencode:
     extends:
-      file: compose-common.yml
+      file: common.yml
       service: agent
     build:
-      context: .
+      context: ..
       target: opencode
       platforms:
         - linux/amd64

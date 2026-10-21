@@ -1,9 +1,9 @@
 # This compose file overrides the network-limiting settings of
-# `compose-claude.yml`, while retaining all the other settings; for use with
+# `claude.yml`, while retaining all the other settings; for use with
 # `run-agent.sh claude open`
 services:
   claude:
-    # No proxy in this mode: unset the vars `compose-common.yml` sets on the
+    # No proxy in this mode: unset the vars `common.yml` sets on the
     # base service so egress is allowed
     environment:
       HTTPS_PROXY: ""

@@ -21,6 +21,16 @@ shift 2
 case "$AGENT" in claude | opencode) ;; *) usage ;; esac
 case "$MODE" in filtered | open) ;; *) usage ;; esac
 
+# Architecture of the agent image, used by the compose files
+export SANDBOX_ARCH="${SANDBOX_ARCH:-arm64}"
+case "$SANDBOX_ARCH" in
+    amd64 | arm64) ;;
+    *)
+        echo "SANDBOX_ARCH must be 'amd64' or 'arm64', not '$SANDBOX_ARCH'" >&2
+        exit 1
+        ;;
+esac
+
 # Refuse to run in any directory listed in `blocked-dirs`
 SANDBOX_DIR="$(dirname "$0")"
 source "$SANDBOX_DIR/lib/check-dir.sh"

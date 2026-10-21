@@ -54,6 +54,9 @@ PROJECT_DIR=. CLAUDE_HOME=. docker compose -f compose/claude.yml build
 PROJECT_DIR=. OPENCODE_HOME=. docker compose -f compose/opencode.yml build
 ```
 
+Prefix the build with `SANDBOX_ARCH=amd64` to build the `amd64` image instead
+(see [Architecture](#architecture)).
+
 The agents share the hardening ([`compose/common.yml`](./compose/common.yml)),
 the base image layers and the blocked-directories check, but are otherwise
 separate: each has its own image (built from its own target of the
@@ -142,12 +145,21 @@ see fit. A plain entry blocks only that exact directory, while an entry ending
 in `/**` also blocks everything below it. Symlinks are resolved before matching
 and matching is case-insensitive.
 
+## Architecture
+
+The agent image is built and run for `arm64` by default, which runs natively
+on Apple Silicon. It can instead be run as `amd64`:
+
+```bash
+SANDBOX_ARCH=amd64 /path/to/this/repo/run-agent.sh claude filtered
+```
+
 ## Resource limits
 
 The agent containers are limited to 4 GB of memory, 2 CPUs and 512 processes,
 which can be overridden:
 
 ```bash
-SANDBOX_MEMORY=16g SANDBOX_CPUS=6 SANDBOX_PIDS=4096 \
+SANDBOX_MEMORY=8g SANDBOX_CPUS=4 SANDBOX_PIDS=2048 \
     /path/to/this/repo/run-agent.sh claude filtered
 ```

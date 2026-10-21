@@ -18,6 +18,10 @@ services:
   agent:
     extends:
       service: hardened
+    # Native `arm64` by default; `amd64` runs under emulation on Apple Silicon
+    # but matches the `linux-64` packages and CI of most projects. Override per
+    # run with the `SANDBOX_ARCH` environment variable
+    platform: linux/${SANDBOX_ARCH:-arm64}
     # Interactivity
     stdin_open: true
     tty: true

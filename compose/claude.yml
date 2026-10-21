@@ -16,9 +16,9 @@ services:
     build:
       context: ..
       target: claude
-      platforms:
-        - linux/amd64
-    image: claude-sandbox:latest
+    # One image per architecture, so that switching does not overwrite the
+    # other; the platform itself is set in `common.yml`
+    image: claude-sandbox:${SANDBOX_ARCH:-arm64}
     volumes:
       # Mount `.claude` and `.claude.json` into the container's home
       # directory; `CLAUDE_HOME` is set in the helper script

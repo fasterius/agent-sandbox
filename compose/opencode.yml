@@ -42,9 +42,9 @@ services:
     build:
       context: ..
       target: opencode
-      platforms:
-        - linux/amd64
-    image: opencode-sandbox:latest
+    # One image per architecture, so that switching does not overwrite the
+    # other; the platform itself is set in `common.yml`
+    image: opencode-sandbox:${SANDBOX_ARCH:-arm64}
     environment:
       # Talk to the forwarder directly rather than through the proxy
       NO_PROXY: localhost,127.0.0.1,ollama.internal

@@ -1,16 +1,25 @@
-# Claude Code sandbox
+# Coding agent sandbox
 
-A Docker Compose setup for running [Claude Code](https://github.com/anthropics/claude-code)
-against an arbitrary local project directory, with outbound network access
-locked down to only the endpoints at Anthropic.
+A Docker Compose setup for running a coding agent against an arbitrary local
+project directory, isolated from the rest of the host and with outbound
+network access restricted to an allow-list. Two agents are supported:
+[Claude Code](https://github.com/anthropics/claude-code), and
+[OpenCode](https://opencode.ai) with a local model served by Ollama on the
+host (see [OpenCode with a local model](#opencode-with-a-local-model)).
 
-- The `claude` container has **no direct route to the internet**: the only thing
-  it can reach at all is the `proxy` container.
+- The agent container has **no direct route to the internet**: the only
+  things it can reach are the `proxy` container and, for OpenCode, a forwarder
+  to Ollama on the host.
 - The `proxy` (tinyproxy) container is the sole egress path, and only forwards
-  HTTPS `CONNECT` requests to hosts matching the allow-list in
-  [`filter`](./filter)
-- Both containers run with all Linux capabilities dropped (`cap_drop: ALL`),
-  `no-new-privileges`, and the `claude` container has memory/CPU/PID limits.
+  requests to hosts matching the agent's allow-list ([`filter`](./filter) for
+  Claude Code, [`filter-opencode`](./filter-opencode) for OpenCode): package
+  and workflow registries such as Conda, Pixi, Nextflow and Bioconductor, plus
+  the Anthropic API for Claude Code.
+- All containers run with all Linux capabilities dropped (`cap_drop: ALL`)
+  and `no-new-privileges`, and the agent containers have memory/CPU/PID
+  limits.
+- Either agent can instead be run with unrestricted egress, keeping the rest
+  of the hardening (see [Unrestricted egress](#unrestricted-egress)).
 
 ## Requirements
 
@@ -19,7 +28,8 @@ locked down to only the endpoints at Anthropic.
 ## Usage
 
 First build the images using `Docker compose` (the environment variables are not
-used during build but are required, so initialise them to the current directory):
+used during build but are required, so initialise them to the current
+directory):
 
 ```bash
 PROJECT_DIR=. CLAUDE_HOME=. docker compose build
@@ -48,23 +58,28 @@ been stored in the `~/.claude-sandbox-home-egress-filtered` directory.
 ## What gets mounted
 
 - Your project directory (`$PWD` when you invoke the script) is mounted at
-  `/home/dev/workspace` inside the container — this is what Claude Code can
-  read and edit.
+  `/home/dev/workspace` inside the container — this is what Claude Code can read
+  and edit.
 - `CLAUDE_HOME` (on the host, outside this repository) is mounted as the
   container's `$HOME` (`/home/dev`). This is where Claude Code persists its
   config, credentials, and session history _between runs of the sandbox_. It
-  contains real secrets (`.credentials.json`, `.claude.json`) once you've
-  logged in — treat it like any other credentials directory.
+  contains real secrets (`.credentials.json`, `.claude.json`) once you've logged
+  in — treat it like any other credentials directory.
   `run-claude-egress-filtered.sh` sets this to
   `~/.claude-sandbox-home-egress-filtered`; `run-claude-egress-open.sh` uses a
-  separate `~/.claude-sandbox-home-egress-open` (see
-  [Unrestricted egress](#unrestricted-egress)), so the two modes can have
-  their own `CLAUDE.md` and credentials.
+  separate `~/.claude-sandbox-home-egress-open` (see [Unrestricted
+  egress](#unrestricted-egress)), so the two modes can have their own
+  `CLAUDE.md` and credentials.
 
 ## Extending the allow-list
 
 Add an anchored regular expression line to `filter` (e.g. `^some\.host\.com$`)
-and restart using the `restart-proxy.sh` script.
+and restart the proxy with the [`restart-proxy.sh`](./restart-proxy.sh) script,
+naming the agent whose allow-list changed:
+
+```bash
+/path/to/this/repo/restart-proxy.sh claude
+```
 
 ## Blocked directories
 
@@ -118,10 +133,8 @@ modes, but is otherwise separate:
 - Its own compose file ([`compose-opencode.yml`](./compose-opencode.yml)),
   project name and networks
 - Its own allow-list, [`filter-opencode`](./filter-opencode), which does not
-  include Anthropic's endpoints; restart its proxy with
-  `COMPOSE_FILE=compose-opencode.yml
-COMPOSE_PROJECT_NAME=opencode-sandbox-egress-filtered PROJECT_DIR=.
-OPENCODE_HOME=. docker compose restart proxy` after editing it
+  include Anthropic's endpoints; apply changes to it with
+  `restart-proxy.sh opencode`
 - Its own home directory, `~/.opencode-sandbox-home-egress-filtered`
 
 ### Unrestricted egress

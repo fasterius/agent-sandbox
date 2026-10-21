@@ -1,0 +1,69 @@
+# OpenCode against a local Ollama server running natively on the host (where
+# it has GPU access); for use with the `run-opencode-*.sh` scripts
+services:
+  proxy:
+    extends:
+      file: compose-common.yml
+      service: proxy
+    volumes:
+      - ./filter-opencode:/etc/tinyproxy/filter:ro
+    networks:
+      - opencode-net
+      - proxy-egress
+
+  # Forwards plain TCP from the internal network to Ollama on the host, so
+  # that the agent can reach it without any other route out
+  ollama:
+    extends:
+      file: compose-common.yml
+      service: hardened
+    image: alpine/socat:latest
+    restart: unless-stopped
+    user: "65534:65534"
+    command:
+      - tcp-listen:11434,fork,reuseaddr
+      - tcp-connect:host.docker.internal:11434
+    # Docker Desktop provides `host.docker.internal` already; this makes it
+    # resolve on plain Linux Docker as well
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      opencode-net:
+        # Ollama only accepts host names it considers local, such as those
+        # ending in `.internal`, when it listens on the loopback interface
+        aliases:
+          - ollama.internal
+      proxy-egress: {}
+
+  opencode:
+    extends:
+      file: compose-common.yml
+      service: agent
+    build:
+      context: .
+      target: opencode
+      platforms:
+        - linux/amd64
+    image: opencode-sandbox:latest
+    environment:
+      # Talk to the forwarder directly rather than through the proxy
+      NO_PROXY: localhost,127.0.0.1,ollama.internal
+      # Skip network features that the allow-list blocks anyway
+      OPENCODE_DISABLE_AUTOUPDATE: "true"
+      OPENCODE_DISABLE_MODELS_FETCH: "true"
+      OPENCODE_DISABLE_LSP_DOWNLOAD: "true"
+    volumes:
+      # `OPENCODE_HOME` is set in the helper script
+      - ${OPENCODE_HOME:?OPENCODE_HOME must be set}:/home/dev
+    networks:
+      - opencode-net
+    depends_on:
+      - proxy
+      - ollama
+
+networks:
+  opencode-net:
+    driver: bridge
+    internal: true
+  proxy-egress:
+    driver: bridge

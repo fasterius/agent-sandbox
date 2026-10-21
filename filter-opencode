@@ -1,0 +1,10 @@
+^prefix\.dev$
+^.*\.prefix\.dev$
+^conda\.anaconda\.org$
+^.*\.anaconda\.org$
+
+^registry\.nextflow\.io$
+^public-cr-prod\.seqera\.io$
+
+^bioconductor\.org$
+^contributions\.bioconductor\.org$

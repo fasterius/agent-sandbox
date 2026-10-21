@@ -92,3 +92,63 @@ This mode also uses its own `~/.claude-sandbox-home-egress-open` directory
 rather than the one `run-claude-egress-filtered.sh` uses, so it can have
 separate `CLAUDE.md` instructions, config and credentials from the
 egress-filtered sandbox.
+
+## OpenCode with a local model
+
+[OpenCode](https://opencode.ai) can be run in the same kind of sandbox against
+a model served by [Ollama](https://ollama.com).
+
+```bash
+cd /path/to/your/project
+/path/to/this/repo/run-opencode-egress-filtered.sh [optional args]
+```
+
+The OpenCode image is built automatically on first run, or manually with:
+
+```bash
+PROJECT_DIR=. OPENCODE_HOME=. docker compose -f compose-opencode.yml build
+```
+
+This mode shares the hardening ([`compose-common.yml`](./compose-common.yml)),
+the base image layers and the blocked-directories check with the Claude Code
+modes, but is otherwise separate:
+
+- Its own image (`opencode-sandbox`), built from the `opencode` target of the
+  [`Dockerfile`](./Dockerfile)
+- Its own compose file ([`compose-opencode.yml`](./compose-opencode.yml)),
+  project name and networks
+- Its own allow-list, [`filter-opencode`](./filter-opencode), which does not
+  include Anthropic's endpoints; restart its proxy with
+  `COMPOSE_FILE=compose-opencode.yml
+COMPOSE_PROJECT_NAME=opencode-sandbox-egress-filtered PROJECT_DIR=.
+OPENCODE_HOME=. docker compose restart proxy` after editing it
+- Its own home directory, `~/.opencode-sandbox-home-egress-filtered`
+
+### Unrestricted egress
+
+As for Claude Code, OpenCode can be run without egress limits:
+
+```bash
+cd /path/to/your/project
+/path/to/this/repo/run-opencode-egress-open.sh [optional args]
+```
+
+This layers [`compose-opencode-egress-open.yml`](./compose-opencode-egress-open.yml)
+on top of `compose-opencode.yml`, skipping the proxy and re-enabling model
+catalogue fetching and language server downloads. Ollama is still reached
+through the forwarder, and the mode uses its own `~/.opencode-sandbox-home-egress-open`
+home directory.
+
+### Configuring the model
+
+On first run, [`opencode-default.json`](./opencode-default.json) is copied to
+`.config/opencode/opencode.json` in the mode's home directory; edit that copy
+to add or change models. Model names must match those listed by `ollama list`
+on the host.
+
+A TUI config, [`tui-default.json`](./tui-default.json), is copied to
+`.config/opencode/tui.json` alongside it; this enables attention desktop
+notifications when the terminal is blurred, with the attention sound disabled.
+
+OpenCode needs a context window of at least 64k tokens, which is larger than
+Ollama's default.

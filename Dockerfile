@@ -30,3 +30,8 @@ CMD ["bash"]
 FROM base AS claude
 RUN npm install -g @anthropic-ai/claude-code
 USER dev
+
+# OpenCode image
+FROM base AS opencode
+RUN npm install -g opencode-ai
+USER dev

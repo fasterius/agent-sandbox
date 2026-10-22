@@ -1,4 +1,4 @@
-FROM ghcr.io/prefix-dev/pixi:0.78.0 AS pixi-src
+FROM ghcr.io/prefix-dev/pixi:latest AS pixi-src
 
 # Shared base for all agent images
 FROM node:22-bookworm-slim AS base

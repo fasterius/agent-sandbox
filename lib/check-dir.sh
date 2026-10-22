@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 
-# Sourced by `run-agent.sh`: exits with an error if the current directory
-# matches an entry in `blocked-dirs`. Expects `SANDBOX_DIR` to be set.
+# Sourced by `agent-sandbox`: exits with an error if the current directory
+# matches an entry in the default `blocked-dirs` or in the optional per-user
+# one. Expects `SANDBOX_DIR` and `CONFIG_DIR` to be set.
 
 _check_dir() {
-    local blocklist="$SANDBOX_DIR/blocked-dirs"
+    local blocklist="$1"
     local home dir line entry base
-
-    if [[ ! -f "$blocklist" ]]; then
-        echo "Error: blocklist '$blocklist' not found" >&2
-        return 1
-    fi
 
     # Resolve symlinks so they can't be used to get around the blocklist
     home="$(cd "$HOME" && pwd -P)" || return 1
@@ -54,5 +50,15 @@ _check_dir() {
     done < "$blocklist"
 }
 
-_check_dir || exit 1
+if [[ ! -f "$SANDBOX_DIR/blocked-dirs" ]]; then
+    echo "Error: blocklist '$SANDBOX_DIR/blocked-dirs' not found" >&2
+    exit 1
+fi
+_check_dir "$SANDBOX_DIR/blocked-dirs" || exit 1
+
+
+if [[ -f "$CONFIG_DIR/blocked-dirs" ]]; then
+    _check_dir "$CONFIG_DIR/blocked-dirs" || exit 1
+fi
+
 unset -f _check_dir

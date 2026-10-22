@@ -1,6 +1,6 @@
 # This compose file overrides the network-limiting settings of
 # `claude.yml`, while retaining all the other settings; for use with
-# `run-agent.sh claude open`
+# `agent-sandbox claude`
 services:
   claude:
     # No proxy in this mode: unset the vars `common.yml` sets on the

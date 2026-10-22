@@ -3,8 +3,6 @@ services:
     extends:
       file: common.yml
       service: proxy
-    volumes:
-      - ../proxy/filter-claude:/etc/tinyproxy/filter:ro
     networks:
       - claude-net
       - proxy-egress
@@ -18,11 +16,11 @@ services:
       target: claude
     # One image per architecture, so that switching does not overwrite the
     # other; the platform itself is set in `common.yml`
-    image: claude-sandbox:${SANDBOX_ARCH:-arm64}
+    image: claude-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}
     volumes:
       # Mount `.claude` and `.claude.json` into the container's home
-      # directory; `CLAUDE_HOME` is set in the helper script
-      - ${CLAUDE_HOME:?CLAUDE_HOME must be set}:/home/dev
+      # directory; `AGENT_HOME` is set by `agent-sandbox`
+      - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev
     networks:
       - claude-net
     depends_on:

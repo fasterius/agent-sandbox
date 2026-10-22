@@ -1,4 +1,5 @@
-# Directories the sandbox run script refuses to run in
+# Directories the sandbox refuses to run in; add personal entries to
+# `~/.config/agent-sandbox/blocked-dirs` rather than here
 
 # Home directories
 ~
@@ -9,17 +10,6 @@
 ~/Music
 ~/Pictures
 ~/Public
-~/docs
-~/home
-~/learning
-~/opt
-~/teaching
-
-# Project directories
-~/projects
-~/projects/[0-9][0-9][0-9][0-9]-*/**
-~/projects/[0-9][0-9][0-9][0-9][0-9]-*/**
-~/projects/personal/**
 
 # Sandbox home directories (which may contain credentials)
 ~/.claude-sandbox-home-*/**

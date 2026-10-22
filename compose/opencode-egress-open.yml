@@ -1,6 +1,5 @@
-# This compose file overrides the network-limiting settings of
-# `opencode.yml`, while retaining all the other settings; for use with
-# `run-agent.sh opencode open`
+# This compose file overrides the network-limiting settings of `opencode.yml`,
+# while retaining all the other settings; for use with `agent-sandbox opencode`
 services:
   opencode:
     # No proxy in this mode: unset the vars `common.yml` sets on the

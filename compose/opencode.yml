@@ -1,12 +1,10 @@
-# OpenCode against a local Ollama server running natively on the host (where
-# it has GPU access); for use with `run-agent.sh opencode`
+# OpenCode against a local Ollama server running natively on the host; for use
+# with `agent-sandbox opencode`
 services:
   proxy:
     extends:
       file: common.yml
       service: proxy
-    volumes:
-      - ../proxy/filter-opencode:/etc/tinyproxy/filter:ro
     networks:
       - opencode-net
       - proxy-egress
@@ -44,7 +42,7 @@ services:
       target: opencode
     # One image per architecture, so that switching does not overwrite the
     # other; the platform itself is set in `common.yml`
-    image: opencode-sandbox:${SANDBOX_ARCH:-arm64}
+    image: opencode-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}
     environment:
       # Talk to the forwarder directly rather than through the proxy
       NO_PROXY: localhost,127.0.0.1,ollama.internal
@@ -53,8 +51,8 @@ services:
       OPENCODE_DISABLE_MODELS_FETCH: "true"
       OPENCODE_DISABLE_LSP_DOWNLOAD: "true"
     volumes:
-      # `OPENCODE_HOME` is set in the helper script
-      - ${OPENCODE_HOME:?OPENCODE_HOME must be set}:/home/dev
+      # `AGENT_HOME` is set by `agent-sandbox`
+      - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev
     networks:
       - opencode-net
     depends_on:

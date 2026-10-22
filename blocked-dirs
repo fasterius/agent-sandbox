@@ -11,11 +11,8 @@
 ~/Pictures
 ~/Public
 
-# Sandbox home directories (which may contain credentials)
-~/.claude-sandbox-home-*/**
-~/.opencode-sandbox-home-*/**
-
-# Credentials and configuration
+# Credentials and configuration, including the agent home directories in
+# `~/.local/share/agent-sandbox`
 ~/.ssh/**
 ~/.docker/**
 ~/.config/**

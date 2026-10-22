@@ -109,8 +109,10 @@ esac
 # Resolve symlinks, so that the script can be linked into a directory on `PATH`
 SANDBOX_DIR="$(dirname "$(readlink -f "$0")")"
 
-# Per-user config and generated files live outside of the repository
+# Per-user config, agent home directories and generated files live outside of
+# the repository, in directories covered by the default `blocked-dirs`
 CONFIG_DIR="$HOME/.config/agent-sandbox"
+DATA_DIR="$HOME/.local/share/agent-sandbox"
 STATE_DIR="$HOME/.local/state/agent-sandbox"
 
 # Each agent and mode gets its own compose project, so that they get separate
@@ -118,7 +120,7 @@ STATE_DIR="$HOME/.local/state/agent-sandbox"
 # home directory, so that each can have its own config and credentials
 export SANDBOX_ARCH SANDBOX_MEMORY SANDBOX_CPUS SANDBOX_PIDS
 export PROJECT_DIR="$PWD"
-export AGENT_HOME="$HOME/.$AGENT-sandbox-home-egress-$EGRESS"
+export AGENT_HOME="$DATA_DIR/$AGENT-$EGRESS"
 export PROXY_FILTER="$STATE_DIR/filter-$AGENT"
 export COMPOSE_PROJECT_NAME="$AGENT-sandbox-egress-$EGRESS"
 export COMPOSE_FILE="$SANDBOX_DIR/compose/$AGENT.yml"

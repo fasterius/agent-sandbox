@@ -89,8 +89,9 @@ and networks.
 - A home directory on the host, outside this repository, is mounted as the
   container's `$HOME` (`/home/dev`). This is where the agent persists its
   config, credentials and session history _between runs of the sandbox_. Each
-  agent and egress mode has its own, `~/.<agent>-sandbox-home-egress-<mode>`
-  (_e.g._ `~/.claude-sandbox-home-egress-open`), so each can have its own config
+  agent and egress mode has its own,
+  `~/.local/share/agent-sandbox/<agent>-<mode>` (_e.g._
+  `~/.local/share/agent-sandbox/claude-open`), so each can have its own config
   and credentials. It contains real secrets once you've logged in — treat it
   like any other credentials directory.
 

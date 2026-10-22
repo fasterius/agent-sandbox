@@ -1,5 +1,5 @@
-# OpenCode against a local Ollama server running natively on the host; for use
-# with `agent-sandbox opencode`
+# OpenCode against a local model server (e.g. llama.cpp) running natively on the
+# host on port 8080; for use with `agent-sandbox opencode`
 services:
   proxy:
     extends:
@@ -9,9 +9,9 @@ services:
       - opencode-net
       - proxy-egress
 
-  # Forwards plain TCP from the internal network to Ollama on the host, so
-  # that the agent can reach it without any other route out
-  ollama:
+  # Forwards plain TCP from the internal network to the model server on the
+  # host, so that the agent can reach it without any other route out
+  llm:
     extends:
       file: common.yml
       service: hardened
@@ -19,18 +19,16 @@ services:
     restart: unless-stopped
     user: "65534:65534"
     command:
-      - tcp-listen:11434,fork,reuseaddr
-      - tcp-connect:host.docker.internal:11434
+      - tcp-listen:8080,fork,reuseaddr
+      - tcp-connect:host.docker.internal:8080
     # Docker Desktop provides `host.docker.internal` already; this makes it
     # resolve on plain Linux Docker as well
     extra_hosts:
       - host.docker.internal:host-gateway
     networks:
       opencode-net:
-        # Ollama only accepts host names it considers local, such as those
-        # ending in `.internal`, when it listens on the loopback interface
         aliases:
-          - ollama.internal
+          - llm.internal
       proxy-egress: {}
 
   opencode:
@@ -45,7 +43,7 @@ services:
     image: opencode-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}
     environment:
       # Talk to the forwarder directly rather than through the proxy
-      NO_PROXY: localhost,127.0.0.1,ollama.internal
+      NO_PROXY: localhost,127.0.0.1,llm.internal
       # Skip network features that the allow-list blocks anyway
       OPENCODE_DISABLE_AUTOUPDATE: "true"
       OPENCODE_DISABLE_MODELS_FETCH: "true"
@@ -57,7 +55,7 @@ services:
       - opencode-net
     depends_on:
       - proxy
-      - ollama
+      - llm
 
 networks:
   opencode-net:

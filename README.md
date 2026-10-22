@@ -2,10 +2,11 @@
 
 A Docker Compose setup for running a coding agent against an arbitrary local
 project directory, isolated from the rest of the host and optionally with
-outbound network access restricted to an allow-list. Two agents are
-supported: [Claude Code](https://github.com/anthropics/claude-code), and
-[OpenCode](https://opencode.ai) with a local model served by Ollama on the
-host (see [OpenCode with a local model](#opencode-with-a-local-model)).
+outbound network access restricted to an allow-list. Two agents are supported:
+[Claude Code](https://github.com/anthropics/claude-code), and
+[OpenCode](https://opencode.ai) with a local model served by
+[llama.cpp](https://github.com/ggml-org/llama.cpp) on the host (see [OpenCode
+with a local model](#opencode-with-a-local-model)).
 
 - The agent only sees the project directory and its own home directory; the rest
   of the host file system is not mounted.
@@ -14,13 +15,14 @@ host (see [OpenCode with a local model](#opencode-with-a-local-model)).
 - In the `filtered` egress mode the agent container has **no direct route to the
   internet**: the only things it can reach are the `proxy` (tinyproxy)
   container, which only forwards requests to hosts on the agent's allow-list,
-  and, for OpenCode, a forwarder to Ollama on the host (see [Egress
+  and, for OpenCode, a forwarder to the model server on the host (see [Egress
   modes](#egress-modes)).
 
 ## Requirements
 
 - Docker and Docker Compose
-- For OpenCode: [Ollama](https://ollama.com) running on the host
+- For OpenCode: a model server with an OpenAI-compatible API on port 8080 of the
+  host, _e.g._ llama.cpp (see [Running llama.cpp on the host](#running-llamacpp-on-the-host))
 
 ## Installation
 
@@ -73,7 +75,7 @@ agent-sandbox [--arch arm64] build <agent>
 
 This rebuilds the image from scratch with the latest base images, and also pulls
 the latest images of the supporting services (the proxy and, for OpenCode, the
-forwarder to Ollama).
+forwarder to the model server).
 
 The agents share the hardening ([`compose/common.yml`](./compose/common.yml)),
 the base image layers and the blocked-directories check, but are otherwise
@@ -103,7 +105,7 @@ The default `open` mode runs the agent with no egress limits, by layering
 `compose/<agent>-egress-open.yml` on top of `compose/<agent>.yml` and skipping
 the proxy. The other hardening (dropped capabilities, `no-new-privileges`,
 memory/CPU/PID limits) still applies; only the network restriction is lifted.
-For OpenCode, Ollama is still reached through the forwarder.
+For OpenCode, the model server is still reached through the forwarder.
 
 ### Filtered
 
@@ -152,19 +154,18 @@ can also hold its own `CLAUDE.md` instructions.
 
 ### OpenCode with a local model
 
-OpenCode runs against a model served by Ollama, which runs natively on the host
-rather than in a container and is reached through the forwarder.
+OpenCode runs against a model server that runs natively on the host rather than
+in a container, so that it can use the GPU, and is reached through the
+forwarder at `http://llm.internal:8080/v1`. Any server with an OpenAI-compatible
+API listening on port 8080 of the host works; the defaults assume llama.cpp.
 
 On first run in a given mode,
 [`opencode/opencode-default.json`](./opencode/opencode-default.json) is copied
 to `.config/opencode/opencode.json` in that mode's home directory; edit that
-copy to add or change models. Model names must match those listed by `ollama
-list` on the host. A TUI config,
+copy to add or change models. Model names must match those served by the model
+server, _i.e._ the section names in llama.cpp's presets file. A TUI config,
 [`opencode/tui-default.json`](./opencode/tui-default.json), is copied to
 `.config/opencode/tui.json` alongside it.
-
-OpenCode needs a context window of at least 64k tokens, which is larger than the
-default of Ollama.
 
 ## Blocked directories
 

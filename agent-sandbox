@@ -188,7 +188,7 @@ case "$AGENT" in
         seed_config \
             opencode/tui-default.json \
             .config/opencode/tui.json
-        SERVICES="ollama"
+        SERVICES="llm"
         ;;
 esac
 

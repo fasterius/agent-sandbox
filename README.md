@@ -12,11 +12,11 @@ with a local model](#opencode-with-a-local-model)).
   of the host file system is not mounted.
 - All containers run with all Linux capabilities dropped (`cap_drop: ALL`) and
   `no-new-privileges`, and the agent containers have memory/CPU/PID limits.
-- In the `filtered` egress mode the agent container has **no direct route to the
-  internet**: the only things it can reach are the `proxy` (tinyproxy)
-  container, which only forwards requests to hosts on the agent's allow-list,
-  and, for OpenCode, a forwarder to the model server on the host (see [Egress
-  modes](#egress-modes)).
+- In the `filtered` and `closed` egress modes the agent container has **no
+  direct route to the internet**: the only things it can reach are the `proxy`
+  (tinyproxy) container, which only forwards requests to hosts on the agent's
+  allow-list, and, for OpenCode, a forwarder to the model server on the host
+  (see [Egress modes](#egress-modes)).
 
 ## Requirements
 
@@ -52,9 +52,9 @@ agent-sandbox --filtered --memory 8g claude
 ```
 
 Options must come before the agent; anything after it is passed on unchanged.
-`--filtered` restricts egress to the allow-list (see [Egress
-modes](#egress-modes)); the other options can also be set with an environment
-variable, which the option overrides when both are given:
+`--filtered` restricts egress to the allow-list and `--closed` to the agent's
+model (see [Egress modes](#egress-modes)); the other options can also be set
+with an environment variable, which the option overrides when both are given:
 
 | Option            | Environment variable | Default | Description              |
 | ----------------- | -------------------- | ------- | ------------------------ |
@@ -120,7 +120,7 @@ The allow-list is combined from the defaults in this repository and your own
 additions (see [Per-user configuration](#per-user-configuration)):
 [`proxy/allow-common`](./proxy/allow-common) holds package and workflow
 registries such as Conda, Pixi, Nextflow and Bioconductor, used by both agents,
-and [`proxy/allow-claude`](./proxy/allow-claude) adds the Anthropic API for
+and [`proxy/model-claude`](./proxy/model-claude) adds the Anthropic API for
 Claude Code. Each line is an anchored regular expression, _e.g._
 `^some\.host\.com$`.
 
@@ -131,6 +131,21 @@ agent to apply them to a running session.
 For OpenCode, this mode also disables model catalogue fetching and language
 server downloads, which the allow-list would block.
 
+### Closed
+
+In the `closed` mode the agent can only reach its model, and nothing else:
+
+```bash
+agent-sandbox --closed opencode
+```
+
+For Claude Code, all egress goes through the proxy, which only allows the hosts
+in [`proxy/model-claude`](./proxy/model-claude); your own allow-list additions
+are not used. For OpenCode, whose model runs on the host, there is no proxy at
+all, so the forwarder to the model server is the only thing it can reach.
+Installing packages and downloading files is therefore not possible in this
+mode.
+
 ## Per-user configuration
 
 Personal configuration goes in `~/.config/agent-sandbox/`, outside this
@@ -140,8 +155,8 @@ optional:
 | File            | Effect                                                                      |
 | --------------- | --------------------------------------------------------------------------- |
 | `blocked-dirs`  | Adds to [`blocked-dirs`](./blocked-dirs)                                    |
-| `allow-common`  | Adds to the allow-lists of all agents                                       |
-| `allow-<agent>` | Adds to the allow-list of that agent only                                   |
+| `allow-common`  | Adds to the `filtered` mode's allow-lists of all agents                     |
+| `allow-<agent>` | Adds to the `filtered` mode's allow-list of that agent only                 |
 | `AGENTS.md`     | Instructions for all agents (see [Agent instructions](#agent-instructions)) |
 | `<agent>/`      | Config files for that agent                                                 |
 
@@ -165,9 +180,9 @@ OpenCode) and mounts it read-only into the container. It combines, in order:
    that agent only.
 3. [`instructions/sandbox.md`](./instructions/sandbox.md): a description of the
    sandbox, with the container's architecture filled in.
-4. [`instructions/egress-filtered.md`](./instructions/egress-filtered.md): in
-   the `filtered` mode only, the network restrictions, followed by the hosts on
-   the combined allow-list.
+4. In the `filtered` and `closed` modes,
+   [`instructions/egress-<mode>.md`](./instructions): the network restrictions;
+   in the `filtered` mode, followed by the hosts on the combined allow-list.
 
 The generated files are kept in `~/.local/state/agent-sandbox/`. They take the
 place of any personal instructions file in a mode's home directory, so keep your

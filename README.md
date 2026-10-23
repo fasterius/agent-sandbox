@@ -137,13 +137,42 @@ Personal configuration goes in `~/.config/agent-sandbox/`, outside this
 repository and outside any directory the agent can be run in. All files are
 optional:
 
-| File                     | Effect                                    |
-| ------------------------ | ----------------------------------------- |
-| `blocked-dirs`           | Adds to [`blocked-dirs`](./blocked-dirs)  |
-| `allow-common`           | Adds to the allow-lists of all agents     |
-| `allow-<agent>`          | Adds to the allow-list of that agent only |
-| `opencode/opencode.json` | Replaces OpenCode's config                |
-| `opencode/tui.json`      | Replaces OpenCode's TUI config            |
+| File            | Effect                                                                      |
+| --------------- | --------------------------------------------------------------------------- |
+| `blocked-dirs`  | Adds to [`blocked-dirs`](./blocked-dirs)                                    |
+| `allow-common`  | Adds to the allow-lists of all agents                                       |
+| `allow-<agent>` | Adds to the allow-list of that agent only                                   |
+| `AGENTS.md`     | Instructions for all agents (see [Agent instructions](#agent-instructions)) |
+| `<agent>/`      | Config files for that agent                                                 |
+
+Each file in `<agent>/` (`claude/` or `opencode/`) is mounted read-only into the
+agent's config directory (`~/.claude/` or `~/.config/opencode/`) in all egress
+modes, in place of the file with the same name in that mode's home directory,
+_e.g._ `opencode/opencode.json` or `claude/settings.json`. The exception is the
+agent's instructions file (`claude/CLAUDE.md` or `opencode/AGENTS.md`), which is
+added to its instructions instead. As the agent can't change these files,
+settings changed from within the agent that are stored in them aren't saved;
+edit the files instead. Changes take effect the next time the agent is started.
+
+## Agent instructions
+
+On each start, the sandbox generates the agent's personal instructions file
+(`~/.claude/CLAUDE.md` for Claude Code, `~/.config/opencode/AGENTS.md` for
+OpenCode) and mounts it read-only into the container. It combines, in order:
+
+1. `~/.config/agent-sandbox/AGENTS.md`: instructions for all agents.
+2. `~/.config/agent-sandbox/<agent>/CLAUDE.md` or `AGENTS.md`: instructions for
+   that agent only.
+3. [`instructions/sandbox.md`](./instructions/sandbox.md): a description of the
+   sandbox, with the container's architecture filled in.
+4. [`instructions/egress-filtered.md`](./instructions/egress-filtered.md): in
+   the `filtered` mode only, the network restrictions, followed by the hosts on
+   the combined allow-list.
+
+The generated files are kept in `~/.local/state/agent-sandbox/`. They take the
+place of any personal instructions file in a mode's home directory, so keep your
+own instructions in `~/.config/agent-sandbox/` instead; instruction files in the
+project itself are not affected.
 
 ## Agents
 
@@ -151,8 +180,7 @@ optional:
 
 The first time you run Claude Code in a given mode you'll have to authenticate
 outside of the sandbox, but subsequent sessions will use the credentials that
-have now been stored in that mode's home directory. Each mode's home directory
-can also hold its own `CLAUDE.md` instructions.
+have now been stored in that mode's home directory.
 
 ### OpenCode with a local model
 
@@ -164,18 +192,19 @@ listening on port 8080 of the host works; the defaults assume `llama.cpp`.
 The models are listed in OpenCode's config, starting from
 [`opencode/opencode-default.json`](./opencode/opencode-default.json); model
 names must match those served by the model server, _i.e._ the section names in
-the `llama.cpp` presets file. The config can be given in two ways:
+the `llama.cpp` presets file. The TUI config starts from
+[`opencode/tui-default.json`](./opencode/tui-default.json), which enables
+desktop notifications without sound. Each can be given in two ways:
 
-- **Per user:** if `~/.config/agent-sandbox/opencode/opencode.json` exists, it
-  is mounted read-only into the container, so that it applies to all egress
-  modes and can't be changed by the agent.
-- **Per mode:** otherwise, the default is copied to the container's
-  `.config/opencode/opencode.json` in that mode's home directory on first run;
-  edit that copy to add or change models.
+- **Per user:** as `~/.config/agent-sandbox/opencode/opencode.json` or
+  `tui.json`, used in all egress modes (see [Per-user
+  configuration](#per-user-configuration)).
+- **Per mode:** otherwise, the default is copied to `.config/opencode/` in that
+  mode's home directory on first run; edit that copy instead.
 
-The TUI config, [`opencode/tui-default.json`](./opencode/tui-default.json), is
-handled the same way, with `~/.config/agent-sandbox/opencode/tui.json` as the
-per-user file.
+To use the same theme in all modes, set it in a per-user `tui.json` (_e.g._
+`"theme": "solarized"`); a theme chosen with `/theme` is only stored in that
+mode's home directory.
 
 ## Blocked directories
 

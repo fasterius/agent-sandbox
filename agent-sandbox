@@ -170,34 +170,84 @@ source "$SANDBOX_DIR/lib/check-dir.sh"
 mkdir -p "$AGENT_HOME"
 RUN_ARGS=(--rm)
 
-# Use the per-user config file in `$CONFIG_DIR/<agent>/` if there is one,
-# mounted read-only over the agent's copy so that it applies to all modes and
-# can't be changed by the agent; otherwise copy the default into the agent's
-# home directory on first run, to be edited there
-use_config() {
-    local source="$1" target="$2" user_config
-    user_config="$CONFIG_DIR/$AGENT/$(basename "$target")"
-    if [[ -f "$user_config" ]]; then
-        RUN_ARGS+=(-v "$(readlink -f "$user_config"):/home/dev/$target:ro")
-    elif [[ ! -f "$AGENT_HOME/$target" ]]; then
-        mkdir -p "$(dirname "$AGENT_HOME/$target")"
-        cp "$SANDBOX_DIR/$source" "$AGENT_HOME/$target"
-    fi
-}
-
-# Agent-specific config files and supporting services besides the proxy
+# Agent-specific settings: the agent's config directory in its home directory,
+# the name of its personal instructions file, default config files and
+# supporting services besides the proxy
 SERVICES=""
+DEFAULTS=()
 case "$AGENT" in
+    claude)
+        AGENT_CONFIG=".claude"
+        INSTRUCTIONS="CLAUDE.md"
+        ;;
     opencode)
-        use_config \
-            opencode/opencode-default.json \
-            .config/opencode/opencode.json
-        use_config \
-            opencode/tui-default.json \
-            .config/opencode/tui.json
+        AGENT_CONFIG=".config/opencode"
+        INSTRUCTIONS="AGENTS.md"
+        DEFAULTS=(opencode/opencode-default.json opencode/tui-default.json)
         SERVICES="llm"
         ;;
 esac
+USER_AGENT_CONFIG="$CONFIG_DIR/$AGENT"
+
+# Mount the per-user files in `$CONFIG_DIR/<agent>/` read-only into the agent's
+# config directory, so that they apply to all modes and can't be changed by the
+# agent; the instructions file is merged below instead
+mount_config() {
+    local source="$1" target="$2"
+    RUN_ARGS+=(-v "$(readlink -f "$source"):/home/dev/$AGENT_CONFIG/$target:ro")
+}
+for file in "$USER_AGENT_CONFIG"/*; do
+    if [[ -f "$file" && "$(basename "$file")" != "$INSTRUCTIONS" ]]; then
+        mount_config "$file" "$(basename "$file")"
+    fi
+done
+
+# Copy the default config files without a per-user version into the agent's
+# home directory on first run, to be edited there
+for default in "${DEFAULTS[@]}"; do
+    name="$(basename "${default/-default/}")"
+    target="$AGENT_HOME/$AGENT_CONFIG/$name"
+    if [[ ! -f "$USER_AGENT_CONFIG/$name" && ! -f "$target" ]]; then
+        mkdir -p "$(dirname "$target")"
+        cp "$SANDBOX_DIR/$default" "$target"
+    fi
+done
+
+# The proxy's filter is needed for the instructions in the filtered mode
+FILTER_CHANGED=false
+if [[ "$EGRESS" == "filtered" ]] && update_filter; then
+    FILTER_CHANGED=true
+fi
+
+# Merge the per-user instructions (shared by all agents, then agent-specific)
+# with a description of the sandbox and its egress mode into the agent's
+# personal instructions file
+case "$SANDBOX_ARCH" in
+    arm64) PLATFORM="linux-aarch64" OTHER_ARCH="amd64" ;;
+    amd64) PLATFORM="linux-64" OTHER_ARCH="arm64" ;;
+esac
+GENERATED_INSTRUCTIONS="$STATE_DIR/instructions-$AGENT-$EGRESS.md"
+mkdir -p "$STATE_DIR"
+{
+    for source in "$CONFIG_DIR/AGENTS.md" "$USER_AGENT_CONFIG/$INSTRUCTIONS"; do
+        if [[ -f "$source" ]]; then
+            cat "$source"
+            echo
+        fi
+    done
+    sed -e "s/@ARCH@/$SANDBOX_ARCH/" -e "s/@PLATFORM@/$PLATFORM/" \
+        -e "s/@OTHER_ARCH@/$OTHER_ARCH/" "$SANDBOX_DIR/instructions/sandbox.md"
+    # Describe the network restrictions and list the allowed hosts in a readable
+    # form, _e.g._ `^.*\.example\.com$` becomes `*.example.com`
+    if [[ "$EGRESS" == "filtered" ]]; then
+        echo
+        cat "$SANDBOX_DIR/instructions/egress-filtered.md"
+        # shellcheck disable=SC2016
+        sed -e 's/#.*//' -e '/^[[:space:]]*$/d' -e 's/^\^//' -e 's/\$$//' \
+            -e 's/\\\././g' -e 's/\.\*/*/g' -e 's/.*/- `&`/' "$PROXY_FILTER"
+    fi
+} > "$GENERATED_INSTRUCTIONS"
+mount_config "$GENERATED_INSTRUCTIONS" "$INSTRUCTIONS"
 
 echo "Running $AGENT with $EGRESS egress ($SANDBOX_ARCH," \
     "$SANDBOX_MEMORY memory, $SANDBOX_CPUS CPUs, $SANDBOX_PIDS processes)" >&2
@@ -205,7 +255,7 @@ echo "Running $AGENT with $EGRESS egress ($SANDBOX_ARCH," \
 # Make sure the supporting services are running; `--no-deps` skips the proxy
 # when running the agent in the open mode, which does not use it
 if [[ "$EGRESS" == "filtered" ]]; then
-    if update_filter; then
+    if [[ "$FILTER_CHANGED" == true ]]; then
         docker compose up -d --force-recreate proxy
     fi
     SERVICES="proxy $SERVICES"

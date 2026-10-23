@@ -22,7 +22,7 @@ with a local model](#opencode-with-a-local-model)).
 
 - Docker and Docker Compose
 - For OpenCode: a model server with an OpenAI-compatible API on port 8080 of the
-  host, _e.g._ llama.cpp (see [Running llama.cpp on the host](#running-llamacpp-on-the-host))
+  host, _e.g._ `llama.cpp`.
 
 ## Installation
 
@@ -133,15 +133,17 @@ server downloads, which the allow-list would block.
 
 ## Per-user configuration
 
-Personal additions go in `~/.config/agent-sandbox/`, outside this repository and
-outside any directory the agent can be run in. All files are optional and add to
-the defaults in the repository:
+Personal configuration goes in `~/.config/agent-sandbox/`, outside this
+repository and outside any directory the agent can be run in. All files are
+optional:
 
-| File            | Adds to                           |
-| --------------- | --------------------------------- |
-| `blocked-dirs`  | [`blocked-dirs`](./blocked-dirs)  |
-| `allow-common`  | the allow-lists of all agents     |
-| `allow-<agent>` | the allow-list of that agent only |
+| File                     | Effect                                    |
+| ------------------------ | ----------------------------------------- |
+| `blocked-dirs`           | Adds to [`blocked-dirs`](./blocked-dirs)  |
+| `allow-common`           | Adds to the allow-lists of all agents     |
+| `allow-<agent>`          | Adds to the allow-list of that agent only |
+| `opencode/opencode.json` | Replaces OpenCode's config                |
+| `opencode/tui.json`      | Replaces OpenCode's TUI config            |
 
 ## Agents
 
@@ -155,17 +157,25 @@ can also hold its own `CLAUDE.md` instructions.
 ### OpenCode with a local model
 
 OpenCode runs against a model server that runs natively on the host rather than
-in a container, so that it can use the GPU, and is reached through the
-forwarder at `http://llm.internal:8080/v1`. Any server with an OpenAI-compatible
-API listening on port 8080 of the host works; the defaults assume llama.cpp.
+in a container, and is reached through the forwarder at
+`http://llm.internal:8080/v1`. Any server with an OpenAI-compatible API
+listening on port 8080 of the host works; the defaults assume `llama.cpp`.
 
-On first run in a given mode,
-[`opencode/opencode-default.json`](./opencode/opencode-default.json) is copied
-to `.config/opencode/opencode.json` in that mode's home directory; edit that
-copy to add or change models. Model names must match those served by the model
-server, _i.e._ the section names in llama.cpp's presets file. A TUI config,
-[`opencode/tui-default.json`](./opencode/tui-default.json), is copied to
-`.config/opencode/tui.json` alongside it.
+The models are listed in OpenCode's config, starting from
+[`opencode/opencode-default.json`](./opencode/opencode-default.json); model
+names must match those served by the model server, _i.e._ the section names in
+the `llama.cpp` presets file. The config can be given in two ways:
+
+- **Per user:** if `~/.config/agent-sandbox/opencode/opencode.json` exists, it
+  is mounted read-only into the container, so that it applies to all egress
+  modes and can't be changed by the agent.
+- **Per mode:** otherwise, the default is copied to the container's
+  `.config/opencode/opencode.json` in that mode's home directory on first run;
+  edit that copy to add or change models.
+
+The TUI config, [`opencode/tui-default.json`](./opencode/tui-default.json), is
+handled the same way, with `~/.config/agent-sandbox/opencode/tui.json` as the
+per-user file.
 
 ## Blocked directories
 

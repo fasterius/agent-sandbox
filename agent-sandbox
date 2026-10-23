@@ -168,24 +168,31 @@ fi
 source "$SANDBOX_DIR/lib/check-dir.sh"
 
 mkdir -p "$AGENT_HOME"
+RUN_ARGS=(--rm)
 
-# Copy a default config file into the agent's home directory on first run
-seed_config() {
-    local source="$1" target="$AGENT_HOME/$2"
-    if [[ ! -f "$target" ]]; then
-        mkdir -p "$(dirname "$target")"
-        cp "$SANDBOX_DIR/$source" "$target"
+# Use the per-user config file in `$CONFIG_DIR/<agent>/` if there is one,
+# mounted read-only over the agent's copy so that it applies to all modes and
+# can't be changed by the agent; otherwise copy the default into the agent's
+# home directory on first run, to be edited there
+use_config() {
+    local source="$1" target="$2" user_config
+    user_config="$CONFIG_DIR/$AGENT/$(basename "$target")"
+    if [[ -f "$user_config" ]]; then
+        RUN_ARGS+=(-v "$(readlink -f "$user_config"):/home/dev/$target:ro")
+    elif [[ ! -f "$AGENT_HOME/$target" ]]; then
+        mkdir -p "$(dirname "$AGENT_HOME/$target")"
+        cp "$SANDBOX_DIR/$source" "$AGENT_HOME/$target"
     fi
 }
 
-# Agent-specific config files to seed and supporting services besides the proxy
+# Agent-specific config files and supporting services besides the proxy
 SERVICES=""
 case "$AGENT" in
     opencode)
-        seed_config \
+        use_config \
             opencode/opencode-default.json \
             .config/opencode/opencode.json
-        seed_config \
+        use_config \
             opencode/tui-default.json \
             .config/opencode/tui.json
         SERVICES="llm"
@@ -197,7 +204,6 @@ echo "Running $AGENT with $EGRESS egress ($SANDBOX_ARCH," \
 
 # Make sure the supporting services are running; `--no-deps` skips the proxy
 # when running the agent in the open mode, which does not use it
-RUN_ARGS=(--rm)
 if [[ "$EGRESS" == "filtered" ]]; then
     if update_filter; then
         docker compose up -d --force-recreate proxy

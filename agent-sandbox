@@ -131,6 +131,21 @@ if [[ "$EGRESS" == "open" ]]; then
     COMPOSE_FILE="$COMPOSE_FILE:$SANDBOX_DIR/compose/$AGENT-egress-open.yml"
 fi
 
+# The API key of OpenCode's model server; without one in the default location,
+# an empty file is used instead, for a server without a key
+if [[ -n "${SANDBOX_LLM_API_KEY_FILE:-}" ]]; then
+    [[ -f "$SANDBOX_LLM_API_KEY_FILE" ]] ||
+        die "API key file '$SANDBOX_LLM_API_KEY_FILE' does not exist"
+    LLM_API_KEY_FILE="$SANDBOX_LLM_API_KEY_FILE"
+elif [[ -f "$HOME/.local/share/llama.cpp/api-key" ]]; then
+    LLM_API_KEY_FILE="$HOME/.local/share/llama.cpp/api-key"
+else
+    LLM_API_KEY_FILE="$STATE_DIR/no-api-key"
+    mkdir -p "$STATE_DIR"
+    touch "$LLM_API_KEY_FILE"
+fi
+export LLM_API_KEY_FILE
+
 # The hosts the agent's model needs (none for a local model), and the
 # allow-lists the proxy uses in each mode; the open mode has no proxy, and nor
 # has the closed mode for an agent with a local model

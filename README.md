@@ -204,6 +204,13 @@ in a container, and is reached through the forwarder at
 `http://llm.internal:8080/v1`. Any server with an OpenAI-compatible API
 listening on port 8080 of the host works; the defaults assume `llama.cpp`.
 
+If the model server requires an API key, keep it in a file on the host, by
+default `~/.local/share/llama.cpp/api-key`, or set `SANDBOX_LLM_API_KEY_FILE` to
+the file's path. The file is mounted read-only at `/run/secrets/llm-api-key`,
+and the default config sends its content as the key with `"apiKey":
+"{file:/run/secrets/llm-api-key}"`; if there's no file, the key is empty. The
+agent can read the key, as it needs it to reach the model.
+
 The models are listed in OpenCode's config, starting from
 [`opencode/opencode-default.json`](./opencode/opencode-default.json); model
 names must match those served by the model server, _i.e._ the section names in

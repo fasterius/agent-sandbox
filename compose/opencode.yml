@@ -51,11 +51,19 @@ services:
     volumes:
       # `AGENT_HOME` is set by `agent-sandbox`
       - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev
+    secrets:
+      - llm-api-key
     networks:
       - opencode-net
     depends_on:
       - proxy
       - llm
+
+secrets:
+  # The model server's API key (empty for a server without one), mounted at
+  # `/run/secrets/llm-api-key`; `LLM_API_KEY_FILE` is set by `agent-sandbox`
+  llm-api-key:
+    file: ${LLM_API_KEY_FILE:?LLM_API_KEY_FILE must be set}
 
 networks:
   opencode-net:

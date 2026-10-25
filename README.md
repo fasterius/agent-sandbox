@@ -221,22 +221,29 @@ and the default config sends its content as the key with `"apiKey":
 "{file:/run/secrets/llm-api-key}"`; if there's no file, the key is empty. The
 agent can read the key, as it needs it to reach the model.
 
-The models are listed in OpenCode's config, starting from
+The models are listed in OpenCode's config,
 [`opencode/opencode-default.json`](./opencode/opencode-default.json); model
 names must match those served by the model server, _i.e._ the section names in
-the `llama.cpp` presets file. The TUI config starts from
-[`opencode/tui-default.json`](./opencode/tui-default.json), which enables
-desktop notifications without sound. Each can be given in two ways:
-
-- **Per user:** as `~/.config/agent-sandbox/opencode/opencode.json` or
-  `tui.json`, used in all egress modes (see [Per-user
-  configuration](#per-user-configuration)).
-- **Per mode:** otherwise, the default is copied to `.config/opencode/` in that
-  mode's home directory on first run; edit that copy instead.
+the `llama.cpp` presets file. The TUI config,
+[`opencode/tui-default.json`](./opencode/tui-default.json), enables desktop
+notifications without sound and loads the session bell plugin (see [Session
+bell](#session-bell)). The defaults are mounted read-only in all egress modes;
+to change them, copy them to `~/.config/agent-sandbox/opencode/` as
+`opencode.json` or `tui.json` and edit them there (see [Per-user
+configuration](#per-user-configuration)).
 
 To use the same theme in all modes, set it in a per-user `tui.json` (_e.g._
 `"theme": "solarized"`); a theme chosen with `/theme` is only stored in that
 mode's home directory.
+
+### Session bell
+
+OpenCode's built-in notifications use escape sequences that many terminals (such
+as Alacritty) and Tmux don't support. The
+[`session-bell`](./opencode/session-bell-default.ts) plugin rings the terminal
+bell when a session completes or needs user attention. Tmux highlights the
+window in its status line and passes the bell on to the terminal. A per-user
+`tui.json` has to load the plugin itself with `"plugin": ["./session-bell.ts"]`.
 
 ## Blocked directories
 

@@ -217,7 +217,11 @@ case "$AGENT" in
     opencode)
         AGENT_CONFIG=".config/opencode"
         INSTRUCTIONS="AGENTS.md"
-        DEFAULTS=(opencode/opencode-default.json opencode/tui-default.json)
+        DEFAULTS=(
+            opencode/opencode-default.json
+            opencode/tui-default.json
+            opencode/session-bell-default.ts
+        )
         SERVICES="llm"
         ;;
 esac
@@ -236,14 +240,11 @@ for file in "$USER_AGENT_CONFIG"/*; do
     fi
 done
 
-# Copy the default config files without a per-user version into the agent's
-# home directory on first run, to be edited there
+# Mount the default config files without a per-user version read-only as well
 for default in "${DEFAULTS[@]}"; do
     name="$(basename "${default/-default/}")"
-    target="$AGENT_HOME/$AGENT_CONFIG/$name"
-    if [[ ! -f "$USER_AGENT_CONFIG/$name" && ! -f "$target" ]]; then
-        mkdir -p "$(dirname "$target")"
-        cp "$SANDBOX_DIR/$default" "$target"
+    if [[ ! -f "$USER_AGENT_CONFIG/$name" ]]; then
+        mount_config "$SANDBOX_DIR/$default" "$name"
     fi
 done
 

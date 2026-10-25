@@ -199,8 +199,10 @@ for file in "$USER_AGENT_CONFIG"/*; do
     fi
 done
 
-# Mount the default config files without a per-user version read-only as well
-for default in "${DEFAULTS[@]}"; do
+# Mount the default config files without a per-user version read-only as well;
+# the expansion guards against an empty array, which Bash before 4.4 treats as
+# unset
+for default in ${DEFAULTS[@]+"${DEFAULTS[@]}"}; do
     name="$(basename "${default/-default/}")"
     if [[ ! -f "$USER_AGENT_CONFIG/$name" ]]; then
         mount_config "$SANDBOX_DIR/$default" "$name"

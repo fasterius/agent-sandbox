@@ -5,8 +5,8 @@ unprivileged user `dev`. If something fails due to the sandbox's restrictions,
 **say so clearly** rather than retrying or exploring workarounds that would also
 fail.
 
-- `/home/dev/workspace` is the project, mounted from the host; changes here
-  persist on the host.
+- The starting working directory is the project, mounted from the host at the
+  same path as there; changes here persist on the host.
 - `/home/dev` is your home directory, persistent between sessions.
 - Anything else in the file system is lost when the container exits.
 - There is no `sudo`, so system packages can't be installed; install software

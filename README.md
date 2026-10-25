@@ -86,8 +86,9 @@ and networks.
 ## What gets mounted
 
 - Your project directory (the current directory when you run `agent-sandbox`) is
-  mounted at `/home/dev/workspace` inside the container — this is what the agent
-  can read and edit.
+  mounted at the same path inside the container, which the agent starts in —
+  this is what the agent can read and edit. Claude Code keeps its session
+  history and memory per project path, so each project gets its own.
 - A home directory on the host, outside this repository, is mounted as the
   container's `$HOME` (`/home/dev`). This is where the agent persists its
   config, credentials and session history _between runs of the sandbox_. Each

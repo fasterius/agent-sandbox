@@ -22,8 +22,6 @@ COPY --from=pixi-src /usr/local/bin/pixi /usr/local/bin/pixi
 # Create an unprivileged user that the agent will run under
 RUN useradd -m -s /bin/bash dev
 
-WORKDIR /home/dev/workspace
-
 CMD ["bash"]
 
 # Claude Code image

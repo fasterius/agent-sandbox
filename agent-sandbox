@@ -291,12 +291,12 @@ mount_config "$GENERATED_INSTRUCTIONS" "$INSTRUCTIONS"
 # can still stage and commit. Submodules keep theirs under `.git/modules/`. An
 # empty hooks directory is created if missing, so that the agent can't add one
 protect_git() {
-    local git_dir="$1" target="/home/dev/workspace/${1#"$PWD"/}" file
+    local git_dir="$1" file
     mkdir -p "$git_dir/hooks"
-    RUN_ARGS+=(-v "$git_dir/hooks:$target/hooks:ro")
+    RUN_ARGS+=(-v "$git_dir/hooks:$git_dir/hooks:ro")
     for file in config config.worktree; do
         if [[ -f "$git_dir/$file" ]]; then
-            RUN_ARGS+=(-v "$git_dir/$file:$target/$file:ro")
+            RUN_ARGS+=(-v "$git_dir/$file:$git_dir/$file:ro")
         fi
     done
 }

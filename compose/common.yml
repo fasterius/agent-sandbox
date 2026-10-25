@@ -28,8 +28,12 @@ services:
       HTTPS_PROXY: http://proxy:8888
       HTTP_PROXY: http://proxy:8888
       NO_PROXY: localhost,127.0.0.1
+    # The project is mounted at the same path as on the host, so that agents
+    # that key their per-project data by path (_e.g._ Claude Code's history and
+    # memory) keep it separate per project
+    working_dir: ${PROJECT_DIR:?PROJECT_DIR must be set}
     volumes:
-      - ${PROJECT_DIR:?PROJECT_DIR must be set}:/home/dev/workspace
+      - ${PROJECT_DIR}:${PROJECT_DIR}
     # Upper limits rather than reservations. The PID limit counts threads as
     # well as processes
     mem_limit: ${SANDBOX_MEMORY:?SANDBOX_MEMORY must be set}

@@ -150,12 +150,11 @@ In the `closed` mode the agent can only reach its model, and nothing else:
 agent-sandbox --closed opencode
 ```
 
-For Claude Code, all egress goes through the proxy, which only allows the hosts
-in [`proxy/model-claude`](./proxy/model-claude); your own allow-list additions
-are not used. For OpenCode, whose model runs on the host, there is no proxy at
-all, so the forwarder to the model server is the only thing it can reach.
-Installing packages and downloading files is therefore not possible in this
-mode.
+All egress goes through the proxy, which only allows the hosts the agent's model
+needs: those in [`proxy/model-claude`](./proxy/model-claude) for Claude Code,
+and none for OpenCode, whose model is reached through the forwarder instead.
+Your own allow-list additions are not used. Installing packages and downloading
+files is therefore not possible in this mode.
 
 ## Per-user configuration
 

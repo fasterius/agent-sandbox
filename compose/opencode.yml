@@ -16,7 +16,6 @@ services:
       file: common.yml
       service: hardened
     image: alpine/socat:latest
-    restart: unless-stopped
     user: "65534:65534"
     command:
       - tcp-listen:8080,fork,reuseaddr

@@ -12,7 +12,6 @@ services:
     extends:
       service: hardened
     image: kalaksi/tinyproxy:latest
-    restart: unless-stopped
     volumes:
       - ../proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
       - ${PROXY_FILTER:?PROXY_FILTER must be set}:/etc/tinyproxy/filter:ro

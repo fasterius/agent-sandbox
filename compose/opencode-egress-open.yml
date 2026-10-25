@@ -2,8 +2,8 @@
 # while retaining all the other settings; for use with `agent-sandbox opencode`
 services:
   opencode:
-    # No proxy in this mode: unset the vars `common.yml` sets on the
-    # base service so egress is allowed
+    # No proxy in this mode: unset the vars `common.yml` sets on the base
+    # service so egress is allowed and don't start the proxy
     environment:
       HTTPS_PROXY: ""
       HTTP_PROXY: ""
@@ -11,6 +11,8 @@ services:
       # Network features that are blocked in the egress-filtered mode
       OPENCODE_DISABLE_MODELS_FETCH: "false"
       OPENCODE_DISABLE_LSP_DOWNLOAD: "false"
+    depends_on: !override
+      - llm
 
 networks:
   opencode-net:

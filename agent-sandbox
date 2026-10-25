@@ -146,9 +146,9 @@ else
 fi
 export LLM_API_KEY_FILE
 
-# The hosts the agent's model needs (none for a local model), and the
-# allow-lists the proxy uses in each mode; the open mode has no proxy, and nor
-# has the closed mode for an agent with a local model
+# The hosts the agent's model needs (none for a local model, whose proxy then
+# allows nothing in the closed mode), and the allow-lists the proxy uses in
+# each mode; the open mode has no proxy
 MODEL_HOSTS="$SANDBOX_DIR/proxy/model-$AGENT"
 ALLOW_LISTS=()
 case "$EGRESS" in
@@ -161,9 +161,7 @@ case "$EGRESS" in
         )
         ;;
     closed)
-        if [[ -f "$MODEL_HOSTS" ]]; then
-            ALLOW_LISTS=("$MODEL_HOSTS")
-        fi
+        ALLOW_LISTS=("$MODEL_HOSTS")
         ;;
 esac
 
@@ -205,9 +203,7 @@ mkdir -p "$AGENT_HOME"
 RUN_ARGS=(--rm)
 
 # Agent-specific settings: the agent's config directory in its home directory,
-# the name of its personal instructions file, default config files and
-# supporting services besides the proxy
-SERVICES=""
+# the name of its personal instructions file and default config files
 DEFAULTS=()
 case "$AGENT" in
     claude)
@@ -222,7 +218,6 @@ case "$AGENT" in
             opencode/tui-default.json
             opencode/session-bell-default.ts
         )
-        SERVICES="llm"
         ;;
 esac
 USER_AGENT_CONFIG="$CONFIG_DIR/$AGENT"
@@ -310,19 +305,12 @@ fi
 echo "Running $AGENT with $EGRESS egress ($SANDBOX_ARCH," \
     "$SANDBOX_MEMORY memory, $SANDBOX_CPUS CPUs, $SANDBOX_PIDS processes)" >&2
 
-# Make sure the supporting services are running; `--no-deps` skips the proxy
-# when the agent does not use it
-if [[ ${#ALLOW_LISTS[@]} -gt 0 ]]; then
-    if [[ "$FILTER_CHANGED" == true ]]; then
-        docker compose up -d --force-recreate proxy
-    fi
-    SERVICES="proxy $SERVICES"
-else
-    RUN_ARGS+=(--no-deps)
-fi
-if [[ -n "${SERVICES// /}" ]]; then
-    docker compose up -d $SERVICES
+# Recreate a running proxy to pick up a changed filter, as Compose only
+# recreates it when its config or image changes
+if [[ "$FILTER_CHANGED" == true ]]; then
+    docker compose up -d --force-recreate proxy
 fi
 
-# Run the agent interactively, forwarding any extra args
+# Run the agent interactively, forwarding any extra args; this also starts the
+# supporting services it depends on in this mode
 exec docker compose run "${RUN_ARGS[@]}" "$AGENT" "$AGENT" "$@"

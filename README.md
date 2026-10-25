@@ -125,7 +125,9 @@ sandbox, as is a hooks directory inside the project that the repository uses
 instead (`core.hooksPath`, _e.g._ `.husky/`). Agents can still stage, commit,
 branch, merge and so on, but can't change the repository's settings with _e.g._
 `git config` or `git remote add`. This only applies to a repository at the top
-of the project that exists when the sandbox starts.
+of the project that exists when the sandbox starts; in a project whose `.git` is
+a file, such as a linked worktree, it isn't protected, and git doesn't work in
+the container, as the repository itself is outside of the project.
 
 Other files in the project that your computer runs remain writable, though, such
 as `.pre-commit-config.yaml` (whose hooks `git commit` runs if you use
@@ -273,9 +275,9 @@ mode's home directory.
 ### Session bell
 
 OpenCode's built-in notifications use escape sequences that many terminals (such
-as Alacritty) and Tmux don't support. The
+as Alacritty) and tmux don't support. The
 [`session-bell`](./opencode/session-bell-default.ts) plugin rings the terminal
-bell when a session completes or needs user attention. Tmux highlights the
+bell when a session completes or needs user attention. tmux highlights the
 window in its status line and passes the bell on to the terminal. A per-user
 `tui.json` has to load the plugin itself with `"plugin": ["./session-bell.ts"]`.
 

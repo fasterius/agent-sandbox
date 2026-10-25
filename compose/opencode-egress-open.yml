@@ -8,7 +8,7 @@ services:
       HTTPS_PROXY: ""
       HTTP_PROXY: ""
       NO_PROXY: ""
-      # Network features that are blocked in the egress-filtered mode
+      # Network features that the proxy blocks in the other modes
       OPENCODE_DISABLE_MODELS_FETCH: "false"
       OPENCODE_DISABLE_LSP_DOWNLOAD: "false"
     depends_on: !override

@@ -1,3 +1,4 @@
+# Claude Code, using the Anthropic API; for use with `agent-sandbox claude`
 services:
   proxy:
     extends:
@@ -18,8 +19,7 @@ services:
     # other; the platform itself is set in `common.yml`
     image: claude-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}
     volumes:
-      # Mount `.claude` and `.claude.json` into the container's home
-      # directory; `AGENT_HOME` is set by `agent-sandbox`
+      # `AGENT_HOME` is set by `agent-sandbox`
       - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev
     networks:
       - claude-net

@@ -108,6 +108,14 @@ change the repository's settings with _e.g._ `git config` or `git remote add`.
 This only applies to a repository at the top of the project that exists when the
 sandbox starts.
 
+Agents can't push, as the container has no credentials for remotes: your SSH
+keys, Git credentials and tokens stay on the host, as neither your home
+directory nor `~/.ssh` is mounted. No setting blocks pushing as such, so in the
+`open` mode an agent could push with credentials it finds in the project, _e.g._
+a token in a `.env` file or in a remote's URL; keep credentials out of projects
+you run agents in. In the `filtered` and `closed` modes, pushing also fails at
+the proxy, as no Git hosts are on the default allow-lists.
+
 ## Egress modes
 
 ### Open

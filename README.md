@@ -23,7 +23,7 @@ with a local model](#opencode-with-a-local-model)).
 
 ## Requirements
 
-- Docker and Docker Compose
+- Docker and Docker Compose 2.24 or later
 - For OpenCode: a model server with an OpenAI-compatible API on port 8080 of the
   host, _e.g._ `llama.cpp`.
 

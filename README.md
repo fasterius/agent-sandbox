@@ -65,23 +65,38 @@ with an environment variable, which the option overrides when both are given:
 
 Run `agent-sandbox --help` for a summary.
 
-The agent's image is built from the included [`Dockerfile`](./Dockerfile) the
-first time it is run, and is not updated after that. To update the packages and
-services, rebuild the image:
-
-```bash
-agent-sandbox [--arch arm64] build <agent>
-```
-
-This rebuilds the image from scratch with the latest base images, and also pulls
-the latest images of the supporting services (the proxy and, for OpenCode, the
-forwarder to the model server).
-
 The agents share the hardening ([`compose/common.yml`](./compose/common.yml)),
 the base image layers and the blocked-directories check, but are otherwise
 separate: each has its own image (built from its own target of the
 `Dockerfile`), compose file (`compose/<agent>.yml`), allow-list, compose project
 and networks.
+
+## Updating the images
+
+The agent's image is built from the included [`Dockerfile`](./Dockerfile) the
+first time it is run, and is not updated after that. To update the agents and
+the packages in the image, rebuild it from this repository with the latest base
+images; `--no-cache` is needed as the agents' packages aren't pinned, so a
+cached build would keep their old versions:
+
+```bash
+cd /path/to/this/repo
+docker build --pull --no-cache --platform linux/arm64 --target claude -t claude-sandbox:arm64 .
+docker build --pull --no-cache --platform linux/arm64 --target opencode -t opencode-sandbox:arm64 .
+```
+
+For the `amd64` image, replace both `arm64` with `amd64`. The image names must
+match the `image` of the agent in `compose/<agent>.yml`, or the new image isn't
+used. Also pull the latest images of the supporting services, the proxy and, for
+OpenCode, the forwarder to the model server:
+
+```bash
+docker pull kalaksi/tinyproxy:latest
+docker pull alpine/socat:latest
+```
+
+Running containers of the supporting services are recreated with the new images
+the next time an agent starts.
 
 ## What gets mounted
 

@@ -1,25 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run an agent in the sandbox with the current directory as the project, or
-# build its image. In the `open` mode the agent has
-# unrestricted egress (`compose/<agent>-egress-open.yml` is layered on top of
-# `compose/<agent>.yml` to drop the proxy); in the `filtered` mode all egress
-# goes through the proxy and its allow-list; in the `closed` mode the agent can
-# only reach its model, through the proxy for a remote one.
+# Run an agent in the sandbox with the current directory as the project. In the
+# `open` mode the agent has unrestricted egress
+# (`compose/<agent>-egress-open.yml` is layered on top of `compose/<agent>.yml`
+# to drop the proxy); in the `filtered` mode all egress goes through the proxy
+# and its allow-list; in the `closed` mode the agent can only reach its model,
+# through the proxy for a remote one.
 
 usage() {
     [[ "$1" -eq 0 ]] || exec >&2
     cat <<EOF
 Usage: $(basename "$0") [options] <claude|opencode> [agent args]
-       $(basename "$0") [options] build <claude|opencode>
 
 Run an agent with the current directory as its project; any arguments after
-the agent are passed on to it. \`build\` updates the agent's image and those
-of its supporting services.
+the agent are passed on to it.
 
-Options must come before the agent or command; those with an environment
-variable shown can also be set with it.
+Options must come before the agent; those with an environment variable shown
+can also be set with it.
 
   --filtered      Only allow egress to allow-listed hosts
   --closed        Only allow egress to the agent's model
@@ -48,7 +46,7 @@ SANDBOX_CPUS="${SANDBOX_CPUS:-2}"
 SANDBOX_PIDS="${SANDBOX_PIDS:-512}"
 
 # Parse options until the first argument that does not start with `-` (the
-# agent or command), so that it and everything after it is left untouched
+# agent), so that it and everything after it is left untouched
 while [[ $# -gt 0 && "$1" == -* ]]; do
     option="$1"
     value=""
@@ -77,19 +75,8 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
 done
 
 [[ $# -ge 1 ]] || usage 1
-COMMAND="$1"
+AGENT="$1"
 shift
-case "$COMMAND" in
-    build)
-        [[ $# -eq 1 ]] || usage 1
-        AGENT="$1"
-        shift
-        ;;
-    *)
-        AGENT="$COMMAND"
-        COMMAND="run"
-        ;;
-esac
 case "$AGENT" in
     claude | opencode) ;;
     *)
@@ -186,14 +173,6 @@ update_filter() {
     fi
     mv "$tmp" "$PROXY_FILTER"
 }
-
-# Update all images: pull the supporting services' images and rebuild the
-# agent's image from scratch, as its packages are not pinned and would
-# otherwise be reused from the cache
-if [[ "$COMMAND" == "build" ]]; then
-    docker compose pull --ignore-buildable
-    exec docker compose build --pull --no-cache "$AGENT"
-fi
 
 # Refuse to run in any directory listed in the default or per-user
 # `blocked-dirs`

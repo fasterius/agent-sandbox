@@ -97,6 +97,16 @@ and networks.
   and credentials. It contains real secrets once you've logged in — treat it
   like any other credentials directory.
 
+## Git
+
+The project's `.git/config` (plus `.git/config.worktree`, if present),
+`.git/hooks/` and submodules under `.git/modules/` are mounted read-only into
+the container, so that an agent can't use them to run commands outside the
+sandbox. Agents can still stage, commit, branch, merge and so on, but can't
+change the repository's settings with _e.g._ `git config` or `git remote add`.
+This only applies to a repository at the top of the project that exists when the
+sandbox starts.
+
 ## Egress modes
 
 ### Open

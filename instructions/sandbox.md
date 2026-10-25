@@ -14,5 +14,9 @@ fail.
 - Available tools include git, ripgrep (`rg`), fd, curl, wget, Pixi and build
   tools (`gcc`, `make`).
 - Pushing with git isn't possible, as there are no credentials for remotes.
+- The project's `.git/config` and `.git/hooks/` are read-only, so commands that
+  change the repository's settings (_e.g._ `git config`, `git remote add` or
+  setting an upstream branch) fail; staging, committing, branching and merging
+  work. Don't work around this; ask the user to make the change instead.
 - The container runs as `@ARCH@`, so Conda packages follow the `@PLATFORM@`
   platform; the sandbox can also be started as `@OTHER_ARCH@`.

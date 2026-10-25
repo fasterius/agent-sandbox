@@ -285,6 +285,27 @@ mkdir -p "$STATE_DIR"
 } > "$GENERATED_INSTRUCTIONS"
 mount_config "$GENERATED_INSTRUCTIONS" "$INSTRUCTIONS"
 
+# Mount the project's git settings and hooks read-only, as git on the host runs
+# commands from them (_e.g._ `core.fsmonitor` on every `git status`); the agent
+# can still stage and commit. Submodules keep theirs under `.git/modules/`. An
+# empty hooks directory is created if missing, so that the agent can't add one
+protect_git() {
+    local git_dir="$1" target="/home/dev/workspace/${1#"$PWD"/}" file
+    mkdir -p "$git_dir/hooks"
+    RUN_ARGS+=(-v "$git_dir/hooks:$target/hooks:ro")
+    for file in config config.worktree; do
+        if [[ -f "$git_dir/$file" ]]; then
+            RUN_ARGS+=(-v "$git_dir/$file:$target/$file:ro")
+        fi
+    done
+}
+if [[ -d "$PWD/.git" ]]; then
+    protect_git "$PWD/.git"
+    while IFS= read -r config; do
+        protect_git "$(dirname "$config")"
+    done < <(find "$PWD/.git/modules" -name config -type f 2> /dev/null)
+fi
+
 echo "Running $AGENT with $EGRESS egress ($SANDBOX_ARCH," \
     "$SANDBOX_MEMORY memory, $SANDBOX_CPUS CPUs, $SANDBOX_PIDS processes)" >&2
 

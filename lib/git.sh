@@ -7,9 +7,10 @@
 # submodules, which keep theirs under `.git/modules/`. Git on the host runs
 # commands from them (_e.g._ `core.fsmonitor` on every `git status`), while the
 # agent can still stage and commit. An empty hooks directory is created if
-# missing, so that the agent can't add one
+# missing, so that the agent can't add one, also for a hooks directory inside
+# the project that the repository uses instead (`core.hooksPath`)
 git_mounts() {
-    local git_dir="$1/.git" dir file
+    local project="$1" git_dir="$1/.git" dir file
     [[ -d "$git_dir" ]] || return 0
     while IFS= read -r dir; do
         mkdir -p "$dir/hooks"
@@ -24,4 +25,10 @@ git_mounts() {
         find "$git_dir/modules" -name config -type f -exec dirname {} \; \
             2> /dev/null
     )
+    dir="$(git config -f "$git_dir/config" --get core.hooksPath)" || return 0
+    case "$dir" in /* | "~"*) ;; *) dir="$project/$dir" ;; esac
+    if [[ "$dir" == "$project"/* && "$dir" != *..* ]]; then
+        mkdir -p "$dir"
+        echo "$dir:$dir:ro"
+    fi
 }

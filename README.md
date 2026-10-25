@@ -10,6 +10,9 @@ with a local model](#opencode-with-a-local-model)).
 
 - The agent only sees the project directory and its own home directory; the rest
   of the host file system is not mounted.
+- The agent can change any file in the project, so review its changes before
+  running anything from the project on your computer, such as scripts or
+  pre-commit hooks (see [Git](#git)).
 - All containers run with all Linux capabilities dropped (`cap_drop: ALL`) and
   `no-new-privileges`, and the agent containers have memory/CPU/PID limits.
 - In the `filtered` and `closed` egress modes the agent container has **no
@@ -118,10 +121,18 @@ the next time an agent starts.
 The project's `.git/config` (plus `.git/config.worktree`, if present),
 `.git/hooks/` and submodules under `.git/modules/` are mounted read-only into
 the container, so that an agent can't use them to run commands outside the
-sandbox. Agents can still stage, commit, branch, merge and so on, but can't
-change the repository's settings with _e.g._ `git config` or `git remote add`.
-This only applies to a repository at the top of the project that exists when the
-sandbox starts.
+sandbox, as is a hooks directory inside the project that the repository uses
+instead (`core.hooksPath`, _e.g._ `.husky/`). Agents can still stage, commit,
+branch, merge and so on, but can't change the repository's settings with _e.g._
+`git config` or `git remote add`. This only applies to a repository at the top
+of the project that exists when the sandbox starts.
+
+Other files in the project that your computer runs remain writable, though, such
+as `.pre-commit-config.yaml` (whose hooks `git commit` runs if you use
+[pre-commit](https://pre-commit.com)), Makefiles, scripts and pipelines. An
+agent could add commands to them that then run outside the sandbox, so review
+the changes with _e.g._ `git diff` before running anything from the project
+after a session.
 
 Agents can't push, as the container has no credentials for remotes: your SSH
 keys, Git credentials and tokens stay on the host, as neither your home

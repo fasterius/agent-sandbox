@@ -79,9 +79,7 @@ AGENT="$1"
 shift
 case "$AGENT" in
     claude | opencode) ;;
-    *)
-        usage 1
-        ;;
+    *) die "unknown agent '$AGENT' (see --help)" ;;
 esac
 
 case "$SANDBOX_ARCH" in

@@ -68,6 +68,16 @@ with an environment variable, which the option overrides when both are given:
 
 Run `agent-sandbox --help` for a summary.
 
+To work in the same environment as an agent without starting the agent itself,
+use `--shell`: without anything after the agent it opens an interactive Bash
+shell in the agent's container, otherwise it runs the given command there and
+exits:
+
+```bash
+agent-sandbox --shell opencode
+agent-sandbox --shell opencode <CMD>
+```
+
 The agents share the hardening ([`compose/common.yml`](./compose/common.yml)),
 the base image layers and the blocked-directories check, but are otherwise
 separate: each has its own image (built from its own target of the

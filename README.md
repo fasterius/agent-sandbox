@@ -15,6 +15,9 @@ with a local model](#opencode-with-a-local-model)).
   pre-commit hooks (see [Git](#git)).
 - All containers run with all Linux capabilities dropped (`cap_drop: ALL`) and
   `no-new-privileges`, and the agent containers have memory/CPU/PID limits.
+- All containers use Docker's default seccomp profile (`seccomp:builtin`), which
+  blocks system calls that containers don't need, such as creating user
+  namespaces.
 - In the `filtered` and `closed` egress modes the agent container has **no
   direct route to the internet**: the only things it can reach are the `proxy`
   (tinyproxy) container, which only forwards requests to hosts on the agent's
@@ -23,7 +26,7 @@ with a local model](#opencode-with-a-local-model)).
 
 ## Requirements
 
-- Docker and Docker Compose 2.24 or later
+- Docker Engine 23 and Docker Compose 2.33 or later
 - For OpenCode: a model server with an OpenAI-compatible API on port 8080 of the
   host, _e.g._ `llama.cpp`.
 

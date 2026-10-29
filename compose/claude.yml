@@ -18,6 +18,9 @@ services:
     # One image per architecture, so that switching does not overwrite the
     # other; the platform itself is set in `common.yml`
     image: claude-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}
+    environment:
+      # The long-lived login token, passed on from `agent-sandbox` if set
+      CLAUDE_CODE_OAUTH_TOKEN:
     volumes:
       # `AGENT_HOME` is set by `agent-sandbox`
       - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev

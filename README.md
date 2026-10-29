@@ -252,9 +252,27 @@ project itself are not affected.
 
 ### Claude Code
 
-The first time you run Claude Code in a given mode you'll have to authenticate
-outside of the sandbox, but subsequent sessions will use the credentials that
-have now been stored in that mode's home directory.
+Claude Code logs in with a long-lived token, shared by all projects and modes,
+which you create once with `claude setup-token` and keep in a file on the host,
+by default `~/.local/share/agent-sandbox/claude-oauth-token` (or set
+`SANDBOX_CLAUDE_TOKEN_FILE` to the file's path). If Claude Code is installed on
+the host, run it there; otherwise run it in the sandbox, which starts without a
+token in the `--shell` mode:
+
+```bash
+agent-sandbox --shell claude claude setup-token
+```
+
+Follow the link it prints to log in, then save the token it prints in the file
+and make it readable only by you (`chmod 600`). The token is passed to Claude
+Code in the environment, so the agent can read it, as it needs it to reach the
+model.
+
+Such a token only gives access to the model, so Claude Code in the sandbox has
+no access to the features of your claude.ai account: connectors, artifacts,
+Claude in Chrome, and cloud and remote sessions. These would otherwise connect
+all projects through your account and bypass the egress modes. Use Claude
+outside of the sandbox for them.
 
 ### OpenCode with a local model
 

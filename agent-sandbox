@@ -141,6 +141,20 @@ else
 fi
 export LLM_API_KEY_FILE
 
+# Claude Code logs in with a long-lived token from `claude setup-token`, which
+# only gives access to the model; it's read from a file on the host and passed
+# on in the environment. Only a `--shell` runs without it, _e.g._ to create one
+CLAUDE_TOKEN_FILE="${SANDBOX_CLAUDE_TOKEN_FILE:-$DATA_DIR/claude-oauth-token}"
+if [[ "$AGENT" == claude && -f "$CLAUDE_TOKEN_FILE" ]]; then
+    CLAUDE_CODE_OAUTH_TOKEN="$(tr -d '[:space:]' < "$CLAUDE_TOKEN_FILE")"
+    export CLAUDE_CODE_OAUTH_TOKEN
+elif [[ "$AGENT" == claude && "$SHELL_ONLY" != true ]]; then
+    die "no Claude Code token in '$CLAUDE_TOKEN_FILE'; create one with" \
+        "'claude setup-token' (see the README)"
+else
+    unset CLAUDE_CODE_OAUTH_TOKEN
+fi
+
 # The hosts the agent's model needs (none for a local model, whose proxy then
 # allows nothing in the closed mode), and the allow-lists the proxy uses in
 # each mode; the open mode has no proxy

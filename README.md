@@ -138,9 +138,23 @@ What's still shared is read-only: the images, your per-user configuration and
 the agent instructions, plus the model server for OpenCode.
 
 A project's data is kept together in its directory in
-`~/.local/share/agent-sandbox/projects/`, along with the generated files the
-sandbox mounts. Moving or renaming a project gives it a new directory there;
-move its data along by renaming the old one to the new ID.
+`~/.local/share/agent-sandbox/projects/`, along with the project's path and the
+generated files the sandbox mounts. Moving or renaming a project gives it a new
+directory there; move its data along by renaming the old one to the new ID.
+
+## Cleaning up
+
+When the last session of a project exits, the sandbox removes the project's
+supporting services and networks. If a session doesn't get to do so, _e.g._
+because its terminal was closed, remove them with:
+
+```bash
+agent-sandbox --cleanup
+```
+
+This removes the containers and networks of all projects without a running
+agent, and lists the data directories of projects whose directory no longer
+exists, for you to delete if you don't need them.
 
 ## Git
 

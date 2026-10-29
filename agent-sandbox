@@ -13,10 +13,12 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [options] <claude|opencode> [agent args]
        $(basename "$0") [options] --shell <claude|opencode> [command]
+       $(basename "$0") --cleanup
 
 Run an agent with the current directory as its project; any arguments after
 the agent are passed on to it. With --shell, run Bash or the given command in
-the agent's container instead.
+the agent's container instead. With --cleanup, remove the containers and
+networks of all projects without a running agent.
 
 Options must come before the agent; those with an environment variable shown
 can also be set with it.
@@ -32,6 +34,8 @@ can also be set with it.
                   (default: 512)
   --shell         Run Bash, or the command after the agent, in the agent's
                   container instead of the agent
+  --cleanup       Remove the containers and networks of all projects without
+                  a running agent, and list sandbox data of deleted projects
   -h, --help      Show this help
 EOF
     exit "$1"
@@ -45,6 +49,7 @@ die() {
 # Defaults, overridden by the environment variables and then by the options
 EGRESS="open"
 SHELL_ONLY=false
+CLEANUP=false
 SANDBOX_ARCH="${SANDBOX_ARCH:-arm64}"
 SANDBOX_MEMORY="${SANDBOX_MEMORY:-4g}"
 SANDBOX_CPUS="${SANDBOX_CPUS:-2}"
@@ -71,6 +76,7 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
         --filtered) EGRESS=filtered ;;
         --closed) EGRESS=closed ;;
         --shell) SHELL_ONLY=true ;;
+        --cleanup) CLEANUP=true ;;
         --arch) SANDBOX_ARCH="$value" ;;
         --memory) SANDBOX_MEMORY="$value" ;;
         --cpus) SANDBOX_CPUS="$value" ;;
@@ -79,6 +85,26 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
     esac
     shift
 done
+
+# Resolve symlinks, so that the script can be linked into a directory on `PATH`
+SANDBOX_DIR="$(dirname "$(readlink -f "$0")")"
+source "$SANDBOX_DIR/lib/blocked-dirs.sh"
+source "$SANDBOX_DIR/lib/cleanup.sh"
+source "$SANDBOX_DIR/lib/filter.sh"
+source "$SANDBOX_DIR/lib/instructions.sh"
+source "$SANDBOX_DIR/lib/git.sh"
+source "$SANDBOX_DIR/lib/project.sh"
+
+# Per-user config, agent home directories and generated files live outside of
+# the repository, in directories covered by the default `blocked-dirs`
+CONFIG_DIR="$HOME/.config/agent-sandbox"
+DATA_DIR="$HOME/.local/share/agent-sandbox"
+STATE_DIR="$HOME/.local/state/agent-sandbox"
+
+if [[ "$CLEANUP" == true ]]; then
+    cleanup "$DATA_DIR"
+    exit
+fi
 
 [[ $# -ge 1 ]] || usage 1
 AGENT="$1"
@@ -99,20 +125,6 @@ esac
     die "CPU limit must be a positive number, not '$SANDBOX_CPUS'"
 [[ "$SANDBOX_PIDS" =~ ^[1-9][0-9]*$ ]] ||
     die "process limit must be a positive whole number, not '$SANDBOX_PIDS'"
-
-# Resolve symlinks, so that the script can be linked into a directory on `PATH`
-SANDBOX_DIR="$(dirname "$(readlink -f "$0")")"
-source "$SANDBOX_DIR/lib/blocked-dirs.sh"
-source "$SANDBOX_DIR/lib/filter.sh"
-source "$SANDBOX_DIR/lib/instructions.sh"
-source "$SANDBOX_DIR/lib/git.sh"
-source "$SANDBOX_DIR/lib/project.sh"
-
-# Per-user config, agent home directories and generated files live outside of
-# the repository, in directories covered by the default `blocked-dirs`
-CONFIG_DIR="$HOME/.config/agent-sandbox"
-DATA_DIR="$HOME/.local/share/agent-sandbox"
-STATE_DIR="$HOME/.local/state/agent-sandbox"
 
 # Each project gets its own home directory per agent and egress mode, and its
 # own Compose project with separate networks and supporting services, so that
@@ -185,7 +197,10 @@ if [[ -f "$CONFIG_DIR/blocked-dirs" ]]; then
     check_dir "$CONFIG_DIR/blocked-dirs" "$PWD" || exit 1
 fi
 
+# Record the project's path, so that `--cleanup` can list the data of projects
+# that no longer exist
 mkdir -p "$AGENT_HOME"
+echo "$PWD" > "$PROJECT_DATA/path"
 RUN_ARGS=(--rm)
 
 # Agent-specific settings: the agent's config directory in its home directory,
@@ -277,5 +292,14 @@ if [[ "$FILTER_CHANGED" == true ]]; then
 fi
 
 # Run the agent or command, forwarding any extra args; this also starts the
-# supporting services it depends on in this mode
-exec docker compose run "${RUN_ARGS[@]}" "$AGENT" "${COMMAND[@]}"
+# supporting services it depends on in this mode. Afterwards, remove the
+# project's containers and networks, unless another session of the project is
+# still running; an interrupt (Ctrl-C) is left to the agent, so that this
+# script still gets to clean up
+trap : INT
+status=0
+docker compose run "${RUN_ARGS[@]}" "$AGENT" "${COMMAND[@]}" || status=$?
+if ! agent_running "$COMPOSE_PROJECT_NAME"; then
+    remove_project "$COMPOSE_PROJECT_NAME"
+fi
+exit "$status"

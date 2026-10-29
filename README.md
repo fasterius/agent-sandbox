@@ -121,13 +121,26 @@ the next time an agent starts.
   this is what the agent can read and edit. Claude Code keeps its session
   history and memory per project path, so each project gets its own.
 - A home directory on the host, outside this repository, is mounted as the
-  container's `$HOME` (`/home/dev`). This is where the agent persists its
-  config, credentials and session history _between runs of the sandbox_. Each
-  agent and egress mode has its own,
-  `~/.local/share/agent-sandbox/<agent>-<mode>` (_e.g._
-  `~/.local/share/agent-sandbox/claude-open`), so each can have its own config
-  and credentials. It contains real secrets once you've logged in — treat it
-  like any other credentials directory.
+  container's `$HOME` (`/home/dev`). This is where the agent persists its config
+  and session history _between runs of the sandbox_. Each project has its own
+  for each agent and egress mode, in
+  `~/.local/share/agent-sandbox/projects/<id>/<agent>-<mode>`, where `<id>` is
+  the project directory's name followed by a checksum of its path (_e.g._
+  `~/.local/share/agent-sandbox/projects/my-project-1234567890/claude-open`).
+
+Agents in different projects therefore share no writable files: one project's
+agent can't read another's session history, and nothing it leaves in its home
+directory, such as a skill, plugin or shell setting, reaches other projects.
+Each project also gets its own Compose project, with its own networks and
+supporting services (the proxy and the forwarder to the model server), so
+agents in different projects can't reach each other over the network either.
+What's still shared is read-only: the images, your per-user configuration and
+the agent instructions, plus the model server for OpenCode.
+
+A project's data is kept together in its directory in
+`~/.local/share/agent-sandbox/projects/`, along with the generated files the
+sandbox mounts. Moving or renaming a project gives it a new directory there;
+move its data along by renaming the old one to the new ID.
 
 ## Git
 
@@ -221,7 +234,7 @@ optional:
 
 Each file in `<agent>/` (`claude/` or `opencode/`) is mounted read-only into the
 agent's config directory (`~/.claude/` or `~/.config/opencode/`) in all egress
-modes, in place of the file with the same name in that mode's home directory,
+modes, in place of the file with the same name in the agent's home directory,
 _e.g._ `opencode/opencode.json` or `claude/settings.json`. The exception is the
 agent's instructions file (`claude/CLAUDE.md` or `opencode/AGENTS.md`), which is
 added to its instructions instead. As the agent can't change these files,
@@ -243,10 +256,11 @@ OpenCode) and mounts it read-only into the container. It combines, in order:
    [`instructions/egress-<mode>.md`](./instructions): the network restrictions;
    in the `filtered` mode, followed by the hosts on the combined allow-list.
 
-The generated files are kept in `~/.local/state/agent-sandbox/`. They take the
-place of any personal instructions file in a mode's home directory, so keep your
-own instructions in `~/.config/agent-sandbox/` instead; instruction files in the
-project itself are not affected.
+The generated files are kept in the project's directory in
+`~/.local/share/agent-sandbox/projects/`. They take the place of any personal
+instructions file in the agent's home directory, so keep your own instructions
+in `~/.config/agent-sandbox/` instead; instruction files in the project itself
+are not affected.
 
 ## Agents
 
@@ -300,8 +314,8 @@ to change them, copy them to `~/.config/agent-sandbox/opencode/` as
 configuration](#per-user-configuration)).
 
 To use the same theme in all modes, set it in a per-user `tui.json` (_e.g._
-`"theme": "solarized"`); a theme chosen with `/theme` is only stored in that
-mode's home directory.
+`"theme": "solarized"`); a theme chosen with `/theme` is only stored in the
+home directory of that project and mode.
 
 ### Session bell
 

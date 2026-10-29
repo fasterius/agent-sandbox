@@ -7,7 +7,9 @@ fail.
 
 - The starting working directory is the project, mounted from the host at the
   same path as there; changes here persist on the host.
-- `/home/dev` is your home directory, persistent between sessions.
+- `/home/dev` is your home directory, persistent between sessions in this
+  project; each project has its own, so nothing in it is shared with other
+  projects.
 - Anything else in the file system is lost when the container exits.
 - There is no `sudo`, so system packages can't be installed; install software
   into the project or home directory instead, _e.g._ with Pixi.

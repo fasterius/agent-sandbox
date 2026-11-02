@@ -18,6 +18,13 @@
 ~/.config/**
 ~/.local/**
 ~/.claude/**
+~/.gnupg/**
+~/.password-store/**
+~/.aws/**
+~/.azure/**
+~/.kube/**
+~/.cargo/**
+~/.npm/**
 
 # Application data on macOS
 ~/Library/**
@@ -27,6 +34,14 @@
 /Users
 /home
 /Volumes
+/mnt
+/media
+/root/**
+/boot/**
+/dev/**
+/proc/**
+/sys/**
+/run/**
 /Applications/**
 /Library/**
 /System/**

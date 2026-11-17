@@ -43,7 +43,7 @@ services:
     environment:
       # Talk to the forwarder directly rather than through the proxy
       NO_PROXY: localhost,127.0.0.1,llm.internal
-      # Skip network features that the allow-list blocks anyway
+      # Skip network features that the proxy blocks anyway
       OPENCODE_DISABLE_AUTOUPDATE: "true"
       OPENCODE_DISABLE_MODELS_FETCH: "true"
       OPENCODE_DISABLE_LSP_DOWNLOAD: "true"

@@ -4,8 +4,7 @@ set -euo pipefail
 # Run an agent in the sandbox with the current directory as the project. In the
 # `open` mode the agent has unrestricted egress
 # (`compose/<agent>-egress-open.yml` is layered on top of `compose/<agent>.yml`
-# to drop the proxy); in the `filtered` mode all egress goes through the proxy
-# and its allow-list; in the `closed` mode the agent can only reach its model,
+# to drop the proxy); in the `closed` mode the agent can only reach its model,
 # through the proxy for a remote one.
 
 usage() {
@@ -23,7 +22,6 @@ networks of all projects without a running agent.
 Options must come before the agent; those with an environment variable shown
 can also be set with it.
 
-  --filtered      Only allow egress to allow-listed hosts
   --closed        Only allow egress to the agent's model
                   (default: unrestricted egress)
   --arch ARCH     Image architecture, amd64 or arm64     SANDBOX_ARCH
@@ -73,7 +71,6 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
     esac
     case "$option" in
         -h | --help) usage 0 ;;
-        --filtered) EGRESS=filtered ;;
         --closed) EGRESS=closed ;;
         --shell) SHELL_ONLY=true ;;
         --cleanup) CLEANUP=true ;;
@@ -90,7 +87,6 @@ done
 SANDBOX_DIR="$(dirname "$(readlink -f "$0")")"
 source "$SANDBOX_DIR/lib/blocked-dirs.sh"
 source "$SANDBOX_DIR/lib/cleanup.sh"
-source "$SANDBOX_DIR/lib/filter.sh"
 source "$SANDBOX_DIR/lib/instructions.sh"
 source "$SANDBOX_DIR/lib/git.sh"
 source "$SANDBOX_DIR/lib/project.sh"
@@ -135,7 +131,6 @@ PROJECT_DATA="$DATA_DIR/projects/$PROJECT_ID"
 export SANDBOX_ARCH SANDBOX_MEMORY SANDBOX_CPUS SANDBOX_PIDS
 export PROJECT_DIR="$PWD"
 export AGENT_HOME="$PROJECT_DATA/$AGENT-$EGRESS"
-export PROXY_FILTER="$PROJECT_DATA/filter-$AGENT-$EGRESS"
 export COMPOSE_PROJECT_NAME="$AGENT-sandbox-$EGRESS-$PROJECT_ID"
 export COMPOSE_FILE="$SANDBOX_DIR/compose/$AGENT.yml"
 if [[ "$EGRESS" == "open" ]]; then
@@ -171,24 +166,9 @@ else
     unset CLAUDE_CODE_OAUTH_TOKEN
 fi
 
-# The hosts the agent's model needs (none for a local model, whose proxy then
-# allows nothing in the closed mode), and the allow-lists the proxy uses in
-# each mode; the open mode has no proxy
-MODEL_HOSTS="$SANDBOX_DIR/proxy/model-$AGENT"
-ALLOW_LISTS=()
-case "$EGRESS" in
-    filtered)
-        ALLOW_LISTS=(
-            "$SANDBOX_DIR/proxy/allow-common"
-            "$MODEL_HOSTS"
-            "$CONFIG_DIR/allow-common"
-            "$CONFIG_DIR/allow-$AGENT"
-        )
-        ;;
-    closed)
-        ALLOW_LISTS=("$MODEL_HOSTS")
-        ;;
-esac
+# The hosts the agent's model needs, which are all the proxy allows in the
+# closed mode (none for a local model); the open mode has no proxy
+export PROXY_FILTER="$SANDBOX_DIR/proxy/model-$AGENT"
 
 # Refuse to run in any directory listed in the default or per-user
 # `blocked-dirs`
@@ -256,17 +236,11 @@ for default in ${DEFAULTS[@]+"${DEFAULTS[@]}"}; do
     fi
 done
 
-# The proxy's filter is needed for the instructions in the filtered mode
-FILTER_CHANGED=false
-if [[ "$EGRESS" != "open" ]] && update_filter "$PROXY_FILTER" "${ALLOW_LISTS[@]}"; then
-    FILTER_CHANGED=true
-fi
-
 # Merge the per-user instructions (shared by all agents, then agent-specific)
 # with a description of the sandbox and its egress mode into the agent's
 # personal instructions file
 GENERATED_INSTRUCTIONS="$PROJECT_DATA/instructions-$AGENT-$EGRESS.md"
-generate_instructions "$SANDBOX_ARCH" "$EGRESS" "$PROXY_FILTER" \
+generate_instructions "$SANDBOX_ARCH" "$EGRESS" \
     "$CONFIG_DIR/AGENTS.md" "$USER_AGENT_CONFIG/$INSTRUCTIONS" \
     > "$GENERATED_INSTRUCTIONS"
 mount_config "$GENERATED_INSTRUCTIONS" "$INSTRUCTIONS"
@@ -294,12 +268,6 @@ fi
 echo "Running ${COMMAND[0]} in the $AGENT sandbox with $EGRESS egress" \
     "($SANDBOX_ARCH," \
     "$SANDBOX_MEMORY memory, $SANDBOX_CPUS CPUs, $SANDBOX_PIDS processes)" >&2
-
-# Recreate a running proxy to pick up a changed filter, as Compose only
-# recreates it when its config or image changes
-if [[ "$FILTER_CHANGED" == true ]]; then
-    docker compose up -d --force-recreate proxy
-fi
 
 # Run the agent or command, forwarding any extra args; this also starts the
 # supporting services it depends on in this mode. Afterwards, remove the

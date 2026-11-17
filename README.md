@@ -24,10 +24,8 @@ Code](https://github.com/anthropics/claude-code), and
 These are not the only potential issues with agents, and the sandbox only covers
 some of them. In particular:
 
-- In the default `open` mode, agents can reach anything on the internet, your
-  local network and services on your computer.
-- In the other modes, allowed hosts can still be used to send data out, _e.g._
-  by uploading to a public Conda channel.
+- In the default mode, agents can reach anything on the internet, your local
+  network and services on your computer.
 - Claude Code _always_ sends data to Anthropic, even in the `closed` mode.
 - Agents can change files in your project that you then run outside the sandbox;
   carefully review all changes before you run anything.
@@ -70,34 +68,24 @@ work on:
 
 ```bash
 cd /path/to/your/project
-agent-sandbox [options] <agent> [agent args]
+agent-sandbox [sandbox options] <agent> [agent options]
 ```
 
 Options must come before the agent; anything after it is passed on to the agent
-itself, _e.g._:
-
-```bash
-# Provide a sandbox option
-agent-sandbox --closed claude
-# Provide an agent option
-agent-sandbox claude --continue
-```
-
-The first time you run an agent it will begin with building the Docker image, so
-it will take longer that first time. The sandbox refuses to run in sensitive
-directories such as your home directory, `~/.ssh` or system directories (see
-[Blocked directories](#blocked-directories)).
+itself. The first time you run an agent it will begin with building the Docker
+image, so it will take longer that first time. The sandbox refuses to run in
+sensitive directories such as your home directory, `~/.ssh` or system
+directories (see [Blocked directories](#blocked-directories)).
 
 ### Network access
 
 The egress mode sets what the agent can reach over the network (see [Egress
 modes](#egress-modes) for details):
 
-| Option       | Mode       | The agent can reach                      |
-| ------------ | ---------- | ---------------------------------------- |
-| (none)       | `open`     | Anything                                 |
-| `--filtered` | `filtered` | Only the hosts on the agent's allow-list |
-| `--closed`   | `closed`   | Only the agent's model                   |
+| Option     | Mode     | The agent can reach    |
+| ---------- | -------- | ---------------------- |
+| (none)     | `open`   | Anything               |
+| `--closed` | `closed` | Only the agent's model |
 
 ### Options
 
@@ -120,13 +108,11 @@ Personal configuration goes in `~/.config/agent-sandbox/`, outside this
 repository and outside any directory the agent can be run in. All files are
 optional:
 
-| File            | Effect                                                                      |
-| --------------- | --------------------------------------------------------------------------- |
-| `blocked-dirs`  | Adds to [`blocked-dirs`](./blocked-dirs)                                    |
-| `allow-common`  | Adds to the `filtered` mode's allow-lists of all agents                     |
-| `allow-<agent>` | Adds to the `filtered` mode's allow-list of that agent only                 |
-| `AGENTS.md`     | Instructions for all agents (see [Agent instructions](#agent-instructions)) |
-| `<agent>/`      | Config files for that agent                                                 |
+| File           | Effect                                                                      |
+| -------------- | --------------------------------------------------------------------------- |
+| `blocked-dirs` | Adds to [`blocked-dirs`](./blocked-dirs)                                    |
+| `AGENTS.md`    | Instructions for all agents (see [Agent instructions](#agent-instructions)) |
+| `<agent>/`     | Config files for that agent                                                 |
 
 Each file in `<agent>/` (`claude/` or `opencode/`) is mounted read-only into the
 agent's config directory (`~/.claude/` or `~/.config/opencode/`) in all egress
@@ -158,9 +144,9 @@ read-only into the container. It combines, in order:
    that agent only.
 3. [`instructions/sandbox.md`](./instructions/sandbox.md): a description of the
    sandbox, with the container's architecture filled in.
-4. In the `filtered` and `closed` modes,
-   [`instructions/egress-<mode>.md`](./instructions): the network restrictions;
-   in the `filtered` mode, followed by the hosts on the combined allow-list.
+4. In the `closed` mode,
+   [`instructions/egress-closed.md`](./instructions/egress-closed.md): the
+   network restrictions.
 
 The generated files are kept in the project's directory inside
 `~/.local/share/agent-sandbox/projects/`. These instructions only cover what
@@ -188,27 +174,6 @@ hardening (see [Isolation](#isolation)) still applies; only the network
 restriction is lifted. For OpenCode, the model server is still reached through
 the forwarder.
 
-#### Filtered
-
-In the `filtered` mode all egress goes through a proxy (tinyproxy), which only
-allows hosts on the agent's allow-list:
-
-```bash
-agent-sandbox --filtered claude
-```
-
-The allow-list is combined from the defaults in this repository and your own
-additions (see [Configuration](#configuration)):
-[`proxy/allow-common`](./proxy/allow-common) holds package and workflow
-registries such as Conda, Pixi, Nextflow and Bioconductor, used by both agents,
-and [`proxy/model-claude`](./proxy/model-claude) adds the Anthropic API for
-Claude Code. Each line is an anchored regular expression, _e.g._
-`^some\.host\.com$`.
-
-Changes to the allow-lists are picked up the next time the agent is started in
-this mode, which recreates the proxy if the combined list changed; restart the
-agent to apply them to a running session.
-
 #### Closed
 
 In the `closed` mode the agent can only reach its model, and nothing else:
@@ -217,18 +182,19 @@ In the `closed` mode the agent can only reach its model, and nothing else:
 agent-sandbox --closed opencode
 ```
 
-All egress goes through a proxy, which only allows the hosts the agent's model
-needs: those in [`proxy/model-claude`](./proxy/model-claude) for Claude Code,
-and none for OpenCode, whose model is reached through the forwarder instead.
-Your own allow-list additions are not used, so installing packages and
-downloading files is not possible in this mode.
+The agent container has no direct route to the internet: the only things it can
+reach are a proxy (tinyproxy) and, for OpenCode, the forwarder to the model
+server. The proxy only allows the hosts the agent's model needs: those in
+[`proxy/model-claude`](./proxy/model-claude) for Claude Code, and none for
+OpenCode, whose model is reached through the forwarder instead. OpenCode's model
+catalogue fetching and language server downloads, which the proxy would block,
+are disabled in this mode.
 
-#### Both restricted modes
-
-In the `filtered` and `closed` modes, the agent container has no direct route to
-the internet: the only things it can reach are the proxy and, for OpenCode, the
-forwarder to the model server. OpenCode's model catalogue fetching and language
-server downloads, which the proxy would block, are disabled in these modes.
+Installing packages and downloading files is therefore not possible in this
+mode. Install a project's dependencies in an `open` session first, _e.g._ into a
+Pixi environment in the project directory, which the `closed` mode can then use;
+the agent's home directory is separate for each mode, so anything installed
+there doesn't carry over.
 
 ### Isolation
 
@@ -291,9 +257,8 @@ your home directory nor `~/.ssh` is mounted. No setting blocks pushing as such,
 so in the `open` mode an agent could push with credentials it finds in the
 project, _e.g._ a token in a `.env` file or in a remote's URL, or with
 credentials given to it through a prompt injection, _e.g._ to someone else's
-repository. Keep credentials out of projects you run agents in. In the
-`filtered` and `closed` modes, pushing also fails at the proxy, as no Git hosts
-are on the default allow-lists.
+repository. Keep credentials out of projects you run agents in. In the `closed`
+mode, pushing also fails at the proxy, as it only allows the model's hosts.
 
 ### Agents
 

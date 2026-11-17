@@ -1,0 +1,2 @@
+# OpenCode's model is reached through the forwarder rather than the proxy, so
+# the proxy allows no hosts

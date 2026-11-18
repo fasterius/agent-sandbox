@@ -19,17 +19,14 @@ the agent are passed on to it. With --shell, run Bash or the given command in
 the agent's container instead. With --cleanup, remove the containers and
 networks of all projects without a running agent.
 
-Options must come before the agent; those with an environment variable shown
-can also be set with it.
+Options must come before the agent.
 
   --closed        Only allow egress to the agent's model
                   (default: unrestricted egress)
-  --arch ARCH     Image architecture, amd64 or arm64     SANDBOX_ARCH
-                  (default: arm64)
-  --memory SIZE   Memory limit (default: 4g)             SANDBOX_MEMORY
-  --cpus N        CPU limit (default: 2)                 SANDBOX_CPUS
-  --pids N        Process and thread limit               SANDBOX_PIDS
-                  (default: 512)
+  --arch ARCH     Image architecture, amd64 or arm64 (default: arm64)
+  --memory SIZE   Memory limit (default: 4g)
+  --cpus N        CPU limit (default: 2)
+  --pids N        Process and thread limit (default: 512)
   --shell         Run Bash, or the command after the agent, in the agent's
                   container instead of the agent
   --cleanup       Remove the containers and networks of all projects without
@@ -44,14 +41,14 @@ die() {
     exit 1
 }
 
-# Defaults, overridden by the environment variables and then by the options
+# Defaults, overridden by the options
 EGRESS="open"
 SHELL_ONLY=false
 CLEANUP=false
-SANDBOX_ARCH="${SANDBOX_ARCH:-arm64}"
-SANDBOX_MEMORY="${SANDBOX_MEMORY:-4g}"
-SANDBOX_CPUS="${SANDBOX_CPUS:-2}"
-SANDBOX_PIDS="${SANDBOX_PIDS:-512}"
+SANDBOX_ARCH="arm64"
+SANDBOX_MEMORY="4g"
+SANDBOX_CPUS="2"
+SANDBOX_PIDS="512"
 
 # Parse options until the first argument that does not start with `-` (the
 # agent), so that it and everything after it is left untouched

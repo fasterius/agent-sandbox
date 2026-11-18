@@ -89,15 +89,12 @@ modes](#egress-modes) for details):
 
 ### Options
 
-The other options can also be set with an environment variable, which the option
-overrides when both are given:
-
-| Option            | Environment variable | Default | Description              |
-| ----------------- | -------------------- | ------- | ------------------------ |
-| `--arch <arch>`   | `SANDBOX_ARCH`       | `arm64` | Image architecture       |
-| `--memory <size>` | `SANDBOX_MEMORY`     | `4g`    | Memory limit             |
-| `--cpus <n>`      | `SANDBOX_CPUS`       | `2`     | CPU limit                |
-| `--pids <n>`      | `SANDBOX_PIDS`       | `512`   | Process and thread limit |
+| Option            | Default | Description              |
+| ----------------- | ------- | ------------------------ |
+| `--arch <arch>`   | `arm64` | Image architecture       |
+| `--memory <size>` | `4g`    | Memory limit             |
+| `--cpus <n>`      | `2`     | CPU limit                |
+| `--pids <n>`      | `512`   | Process and thread limit |
 
 Run `agent-sandbox --help` for a summary, including `--shell` (see
 [Shell](#shell)) and `--cleanup` (see [Cleaning up](#cleaning-up)).

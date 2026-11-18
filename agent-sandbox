@@ -191,12 +191,13 @@ case "$AGENT" in
 esac
 USER_AGENT_CONFIG="$CONFIG_DIR/$AGENT"
 
-# Mount the per-user files in `$CONFIG_DIR/<agent>/` read-only into the agent's
-# config directory, so that they apply to all modes and can't be changed by the
-# agent; the instructions file is merged below instead. Docker can't create a
-# missing mount point inside the mounted home directory, so an empty file is
-# created there first. As the agent controls the home directory, symlinks on the
-# way are refused, so that they can't make this create files elsewhere
+# Mount the per-user files and directories in `$CONFIG_DIR/<agent>/` read-only
+# into the agent's config directory, so that they apply to all modes and can't
+# be changed by the agent; the instructions file is merged below instead. Docker
+# can't create a missing mount point inside the mounted home directory, so an
+# empty file or directory is created there first. As the agent controls the
+# home directory, symlinks on the way are refused, so that they can't make this
+# create files elsewhere
 mount_config() {
     local source="$1" target="$2" path="$AGENT_HOME" part parts
     IFS=/ read -ra parts <<< "$AGENT_CONFIG/$target"
@@ -205,11 +206,15 @@ mount_config() {
         [[ ! -L "$path" ]] || die "'$path' is a symlink; remove it to continue"
     done
     mkdir -p "$(dirname "$path")"
-    [[ -e "$path" ]] || : > "$path"
+    if [[ -d "$source" ]]; then
+        mkdir -p "$path"
+    elif [[ ! -e "$path" ]]; then
+        : > "$path"
+    fi
     RUN_ARGS+=(-v "$(readlink -f "$source"):/home/dev/$AGENT_CONFIG/$target:ro")
 }
 for file in "$USER_AGENT_CONFIG"/*; do
-    if [[ -f "$file" && "$(basename "$file")" != "$INSTRUCTIONS" ]]; then
+    if [[ -e "$file" && "$(basename "$file")" != "$INSTRUCTIONS" ]]; then
         mount_config "$file" "$(basename "$file")"
     fi
 done

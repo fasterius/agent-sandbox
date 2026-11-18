@@ -82,12 +82,12 @@ options:
 | `--pids <n>`      | `512`   | Process and thread limit                                |
 | `--closed`        |         | Limit network egress                                    |
 | `--shell`         |         | Start a shell in the container without running an agent |
-| `--cleanup`       |         | Remove containers/services without an agent             |
+| `--cleanup`       |         | Remove leftover containers/services without an agent    |
 | `-h, --help`      |         | Show the help                                           |
 
-The `--closed` mode with OpenCode this means no internet access whatsoever,
-while with Claude Code it means connections to contacting Anthropic only (which
-is a requirement for it to work at all).
+The `--closed` mode with OpenCode means no internet access whatsoever, while
+with Claude Code it means allowing connections to Anthropic _only_ (which is a
+requirement for it to work at all).
 
 ## Configuration
 
@@ -100,14 +100,14 @@ optional:
 | `AGENTS.md`    | Instructions for all agents                 |
 | `<agent>/`     | Config files and directories for that agent |
 
-Each file in `<agent>/` (`claude/` or `opencode/`) is mounted read-only into the
-agent's config directory (`~/.claude/` or `~/.config/opencode/`) , in place of
-the file with the same name in the agent's home directory, _e.g._
-`opencode/opencode.json` or `claude/settings.json`. The exception is the agent's
-instructions file (`claude/CLAUDE.md` or `opencode/AGENTS.md`), which is added
-to its instructions instead. As the agent can't change these files, settings
-changed from within the agent that are stored in them aren't saved; edit the
-files instead. Changes take effect the next time the agent is started.
+Each file or directory in `claude/` or `opencode/` replaces the one with the
+same name in the agent's config directory (`~/.claude/` or
+`~/.config/opencode/`), _e.g._ `claude/settings.json` or `claude/skills/`,
+except for the agent's instructions file (see [Agent
+instructions](#agent-instructions)). They are mounted read-only, so settings
+changed from within the agent that are stored in them aren't saved; edit them
+here instead. Don't add directories that the agent writes its own data to, such
+as Claude Code's `projects/` or `plugins/`.
 
 For an example configuration, see [here](https://github.com/fasterius/dotfiles/tree/main/agent-sandbox).
 
@@ -146,7 +146,8 @@ mine, and I have reviewed and tested all changes on my own machines.
 
 ## Reference
 
-The rest of this README describes how the sandbox works in more detail:
+The rest of this README describes how the sandbox works in more detail, covering
+the following sections:
 
 - [Agents](#agents)
 - [Isolation](#isolation)

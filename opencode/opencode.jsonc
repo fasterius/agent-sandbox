@@ -1,6 +1,8 @@
+// OpenCode's system config, mounted at `/etc/opencode/opencode.jsonc`: OpenCode
+// merges it over the user's and project's configs, so these settings can't be
+// overridden. The models are left to the user's `opencode.json`.
 {
     "$schema": "https://opencode.ai/config.json",
-    "model": "llamacpp/qwen3.8-27b",
     "share": "disabled",
     "provider": {
         "llamacpp": {
@@ -9,11 +11,6 @@
             "options": {
                 "baseURL": "http://llm.internal:8080/v1",
                 "apiKey": "{file:/run/secrets/llm-api-key}"
-            },
-            "models": {
-                "qwen3.8-27b": {
-                    "name": "Qwen 3.8 27B"
-                }
             }
         }
     }

@@ -180,8 +180,7 @@ echo "$PWD" > "$PROJECT_DATA/path"
 RUN_ARGS=(--rm)
 
 # Agent-specific settings: the agent's config directory in its home directory,
-# the name of its personal instructions file and default config files
-DEFAULTS=()
+# and the name of its personal instructions file
 case "$AGENT" in
     claude)
         AGENT_CONFIG=".claude"
@@ -190,11 +189,6 @@ case "$AGENT" in
     opencode)
         AGENT_CONFIG=".config/opencode"
         INSTRUCTIONS="AGENTS.md"
-        DEFAULTS=(
-            opencode/opencode-default.json
-            opencode/tui-default.json
-            opencode/session-bell-default.ts
-        )
         ;;
 esac
 USER_AGENT_CONFIG="$CONFIG_DIR/$AGENT"
@@ -219,16 +213,6 @@ mount_config() {
 for file in "$USER_AGENT_CONFIG"/*; do
     if [[ -f "$file" && "$(basename "$file")" != "$INSTRUCTIONS" ]]; then
         mount_config "$file" "$(basename "$file")"
-    fi
-done
-
-# Mount the default config files without a per-user version read-only as well;
-# the expansion guards against an empty array, which Bash before 4.4 treats as
-# unset
-for default in ${DEFAULTS[@]+"${DEFAULTS[@]}"}; do
-    name="$(basename "${default/-default/}")"
-    if [[ ! -f "$USER_AGENT_CONFIG/$name" ]]; then
-        mount_config "$SANDBOX_DIR/$default" "$name"
     fi
 done
 

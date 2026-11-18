@@ -267,41 +267,31 @@ all projects through your account and bypass the egress modes.
 
 #### OpenCode with a local model
 
-OpenCode runs against a model server that runs natively on the host rather than
-in a container, and is reached through the forwarder at
-`http://llm.internal:8080/v1`. Any server with an OpenAI-compatible API
-listening on port 8080 of the host works; the defaults assume `llama.cpp`.
+OpenCode runs against a model server that runs natively on the host, and is
+reached through the forwarder. Any server with an OpenAI-compatible API
+listening on port 8080 of the host works, such as `llama.cpp`, which is used as
+the default provider here. The connection is set up in
+[`opencode/opencode.jsonc`](./opencode/opencode.jsonc), which is mounted as
+OpenCode's system config at `/etc/opencode/`: it defines the provider `llamacpp`
+at `http://llm.internal:8080/v1` and disables session sharing.
 
 If the model server requires an API key, keep it in a file on the host, by
 default `~/.local/share/llama.cpp/api-key`, or set `SANDBOX_LLM_API_KEY_FILE` to
 the file's path. The file is mounted read-only at `/run/secrets/llm-api-key`,
-and the default config sends its content as the key with `"apiKey":
+and the system config sends its content as the key with `"apiKey":
 "{file:/run/secrets/llm-api-key}"`; if there's no file, the key is empty. The
 agent can read the key, as it needs it to reach the model.
 
-The models are listed in OpenCode's config,
-[`opencode/opencode-default.json`](./opencode/opencode-default.json); model
-names must match those served by the model server, _i.e._ the section names in
-the `llama.cpp` presets file. The TUI config,
-[`opencode/tui-default.json`](./opencode/tui-default.json), enables desktop
-notifications without sound and loads the session bell plugin (see [Session
-bell](#session-bell)). The defaults are mounted read-only in all egress modes;
-to change them, copy them to `~/.config/agent-sandbox/opencode/` as
-`opencode.json` or `tui.json` and edit them there (see
-[Configuration](#configuration)).
+The models must be listed in your own config,
+`~/.config/agent-sandbox/opencode/opencode.json` (see
+[Configuration](#configuration)); without it, OpenCode has no models to choose
+from. Model names must match those served by the model server, _i.e._ the
+section names in the `llama.cpp` presets file; For an example configuration, see
+[this example](https://github.com/fasterius/dotfiles/tree/main/agent-sandbox).
 
-To use the same theme in all modes, set it in a per-user `tui.json` (_e.g._
-`"theme": "solarized"`); a theme chosen with `/theme` is only stored in the home
-directory of that project and mode.
-
-##### Session bell
-
-OpenCode's built-in notifications use escape sequences that many terminals (such
-as Alacritty) and tmux don't support. The
-[`session-bell`](./opencode/session-bell-default.ts) plugin rings the terminal
-bell when a session completes or needs user attention. tmux highlights the
-window in its status line and passes the bell on to the terminal. A per-user
-`tui.json` has to load the plugin itself with `"plugin": ["./session-bell.ts"]`.
+To use the same theme in all projects, set it in a per-user `tui.json` (_e.g._
+`"theme": "solarized"`); a theme chosen with `/theme` is only stored in that
+project's home directory.
 
 ### Shell
 

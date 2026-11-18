@@ -40,6 +40,8 @@ services:
     volumes:
       # `AGENT_HOME` is set by `agent-sandbox`
       - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev
+      # The connection to the model server, which the user's config can't change
+      - ../opencode/opencode.jsonc:/etc/opencode/opencode.jsonc:ro
     secrets:
       - llm-api-key
     networks:

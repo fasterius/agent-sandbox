@@ -122,15 +122,15 @@ esac
 [[ "$SANDBOX_PIDS" =~ ^[1-9][0-9]*$ ]] ||
     die "process limit must be a positive whole number, not '$SANDBOX_PIDS'"
 
-# Each project gets its own home directory per agent and egress mode, and its
-# own Compose project with separate networks and supporting services, so that
-# agents in different projects share no writable files and can't reach each
-# other; the project's data is kept together in `$DATA_DIR/projects/<id>/`
+# Each project gets its own home directory per agent and its own Compose project
+# per egress mode with separate networks and supporting services, so that agents
+# in different projects share no writable files and can't reach each other; the
+# project's data is kept together in `$DATA_DIR/projects/<id>/`
 PROJECT_ID="$(project_id "$PWD")"
 PROJECT_DATA="$DATA_DIR/projects/$PROJECT_ID"
 export SANDBOX_ARCH SANDBOX_MEMORY SANDBOX_CPUS SANDBOX_PIDS
 export PROJECT_DIR="$PWD"
-export AGENT_HOME="$PROJECT_DATA/$AGENT-$EGRESS"
+export AGENT_HOME="$PROJECT_DATA/$AGENT"
 export COMPOSE_PROJECT_NAME="$AGENT-sandbox-$EGRESS-$PROJECT_ID"
 export COMPOSE_FILE="$SANDBOX_DIR/compose/$AGENT.yml"
 if [[ "$EGRESS" == "open" ]]; then

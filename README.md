@@ -188,12 +188,6 @@ reach a proxy (tinyproxy), which only allows the hosts in
 forwarder to the model server, so its model catalogue fetching and language
 server downloads are disabled in this mode.
 
-Installing packages and downloading files is therefore not possible in this
-mode. Install a project's dependencies in an `open` session first, _e.g._ into a
-Pixi environment in the project directory, which the `closed` mode can then use;
-the agent's home directory is separate for each mode, so anything installed
-there doesn't carry over.
-
 ### Isolation
 
 All containers run with all Linux capabilities dropped (`cap_drop: ALL`),
@@ -211,10 +205,9 @@ The agent only sees two directories of the host:
 - A home directory on the host, outside this repository, is mounted as the
   container's `$HOME` (`/home/dev`). This is where the agent persists its config
   and session history _between runs of the sandbox_. Each project has its own
-  for each agent and egress mode, in
-  `~/.local/share/agent-sandbox/projects/<id>/<agent>-<mode>`, where `<id>` is
-  the project directory's name followed by a checksum of its path (_e.g._
-  `~/.local/share/agent-sandbox/projects/my-project-1234567890/claude-open`).
+  for each agent in `~/.local/share/agent-sandbox/projects/<id>/<agent>`, where
+  `<id>` is the project directory's name followed by a checksum of its path
+  (_e.g._ `~/.local/share/agent-sandbox/projects/my-project-1234567890/claude`).
 
 Agents in different projects therefore share no writable files: one project's
 agent can't read another's session history, and nothing it leaves in its home

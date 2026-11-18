@@ -91,7 +91,7 @@ modes](#egress-modes) for details):
 
 | Option            | Default | Description              |
 | ----------------- | ------- | ------------------------ |
-| `--arch <arch>`   | `arm64` | Image architecture       |
+| `--arch <arch>`   | Host's  | Image architecture       |
 | `--memory <size>` | `4g`    | Memory limit             |
 | `--cpus <n>`      | `2`     | CPU limit                |
 | `--pids <n>`      | `512`   | Process and thread limit |
@@ -306,9 +306,9 @@ agent-sandbox --shell opencode <CMD>
 
 #### Architecture
 
-The agent image is built and run for `arm64` by default, which runs natively on
-Apple Silicon. It can instead be built and run as `amd64`, which runs under
-emulation on Apple Silicon:
+The agent image is built and run for the host's architecture by default: `arm64`
+on _e.g._ Apple Silicon and `amd64` on _e.g._ Intel and AMD processors. It can
+instead be built and run for the other architecture, which runs under emulation:
 
 ```bash
 agent-sandbox --arch amd64 claude

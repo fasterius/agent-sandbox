@@ -23,7 +23,7 @@ Options must come before the agent.
 
   --closed        Only allow egress to the agent's model
                   (default: unrestricted egress)
-  --arch ARCH     Image architecture, amd64 or arm64 (default: arm64)
+  --arch ARCH     Image architecture, amd64 or arm64 (default: the host's)
   --memory SIZE   Memory limit (default: 4g)
   --cpus N        CPU limit (default: 2)
   --pids N        Process and thread limit (default: 512)
@@ -45,7 +45,10 @@ die() {
 EGRESS="open"
 SHELL_ONLY=false
 CLEANUP=false
-SANDBOX_ARCH="arm64"
+case "$(uname -m)" in
+    x86_64 | amd64) SANDBOX_ARCH="amd64" ;;
+    *) SANDBOX_ARCH="arm64" ;;
+esac
 SANDBOX_MEMORY="4g"
 SANDBOX_CPUS="2"
 SANDBOX_PIDS="512"

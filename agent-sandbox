@@ -21,8 +21,7 @@ networks of all projects without a running agent.
 
 Options must come before the agent.
 
-  --closed        Only allow egress to the agent's model
-                  (default: unrestricted egress)
+  --closed        Limit network egress (default: no limits)
   --arch ARCH     Image architecture, amd64 or arm64 (default: the host's)
   --memory SIZE   Memory limit (default: 4g)
   --cpus N        CPU limit (default: 2)

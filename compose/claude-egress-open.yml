@@ -3,8 +3,8 @@
 # `agent-sandbox claude`
 services:
   claude:
-    # No proxy in this mode: unset the vars `common.yml` sets on the base
-    # service so egress is allowed and don't start the proxy
+    # No proxy in this mode: unset the vars `claude.yml` sets so egress is
+    # allowed and don't start the proxy
     environment:
       HTTPS_PROXY: ""
       HTTP_PROXY: ""

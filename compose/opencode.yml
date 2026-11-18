@@ -1,14 +1,6 @@
 # OpenCode against a local model server (e.g. llama.cpp) running natively on the
 # host on port 8080; for use with `agent-sandbox opencode`
 services:
-  proxy:
-    extends:
-      file: common.yml
-      service: proxy
-    networks:
-      - opencode-net
-      - proxy-egress
-
   # Forwards plain TCP from the internal network to the model server on the
   # host, so that the agent can reach it without any other route out
   llm:
@@ -28,7 +20,7 @@ services:
       opencode-net:
         aliases:
           - llm.internal
-      proxy-egress: {}
+      llm-egress: {}
 
   opencode:
     extends:
@@ -41,9 +33,7 @@ services:
     # other; the platform itself is set in `common.yml`
     image: opencode-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}
     environment:
-      # Talk to the forwarder directly rather than through the proxy
-      NO_PROXY: localhost,127.0.0.1,llm.internal
-      # Skip network features that the proxy blocks anyway
+      # Skip network features that can't work without egress
       OPENCODE_DISABLE_AUTOUPDATE: "true"
       OPENCODE_DISABLE_MODELS_FETCH: "true"
       OPENCODE_DISABLE_LSP_DOWNLOAD: "true"
@@ -55,7 +45,6 @@ services:
     networks:
       - opencode-net
     depends_on:
-      - proxy
       - llm
 
 secrets:
@@ -68,5 +57,5 @@ networks:
   opencode-net:
     driver: bridge
     internal: true
-  proxy-egress:
+  llm-egress:
     driver: bridge

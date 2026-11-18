@@ -166,10 +166,6 @@ else
     unset CLAUDE_CODE_OAUTH_TOKEN
 fi
 
-# The hosts the agent's model needs, which are all the proxy allows in the
-# closed mode (none for a local model); the open mode has no proxy
-export PROXY_FILTER="$SANDBOX_DIR/proxy/model-$AGENT"
-
 # Refuse to run in any directory listed in the default or per-user
 # `blocked-dirs`
 check_dir "$SANDBOX_DIR/blocked-dirs" "$PWD" || exit 1

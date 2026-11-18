@@ -1,9 +1,15 @@
 # Claude Code, using the Anthropic API; for use with `agent-sandbox claude`
 services:
+  # Forwards requests to the hosts in `proxy/model-claude` only, so that the
+  # agent can reach its model without any other route out
   proxy:
     extends:
       file: common.yml
-      service: proxy
+      service: hardened
+    image: kalaksi/tinyproxy:latest
+    volumes:
+      - ../proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
+      - ../proxy/model-claude:/etc/tinyproxy/filter:ro
     networks:
       - claude-net
       - proxy-egress
@@ -19,6 +25,9 @@ services:
     # other; the platform itself is set in `common.yml`
     image: claude-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}
     environment:
+      HTTPS_PROXY: http://proxy:8888
+      HTTP_PROXY: http://proxy:8888
+      NO_PROXY: localhost,127.0.0.1
       # The long-lived login token, passed on from `agent-sandbox` if set
       CLAUDE_CODE_OAUTH_TOKEN:
     volumes:

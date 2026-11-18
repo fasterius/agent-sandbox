@@ -182,13 +182,11 @@ In the `closed` mode the agent can only reach its model, and nothing else:
 agent-sandbox --closed opencode
 ```
 
-The agent container has no direct route to the internet: the only things it can
-reach are a proxy (tinyproxy) and, for OpenCode, the forwarder to the model
-server. The proxy only allows the hosts the agent's model needs: those in
-[`proxy/model-claude`](./proxy/model-claude) for Claude Code, and none for
-OpenCode, whose model is reached through the forwarder instead. OpenCode's model
-catalogue fetching and language server downloads, which the proxy would block,
-are disabled in this mode.
+The agent container has no direct route to the internet. Claude Code can only
+reach a proxy (tinyproxy), which only allows the hosts in
+[`proxy/model-claude`](./proxy/model-claude). OpenCode can only reach the
+forwarder to the model server, so its model catalogue fetching and language
+server downloads are disabled in this mode.
 
 Installing packages and downloading files is therefore not possible in this
 mode. Install a project's dependencies in an `open` session first, _e.g._ into a
@@ -222,10 +220,11 @@ Agents in different projects therefore share no writable files: one project's
 agent can't read another's session history, and nothing it leaves in its home
 directory, such as a skill, plugin or shell setting, reaches other projects.
 Each project also gets its own Compose project, with its own networks and
-supporting services (the proxy and the forwarder to the model server), so agents
-in different projects can't reach each other over the network either. What's
-still shared is read-only: the images, your per-user configuration and the agent
-instructions, plus the model server for OpenCode.
+supporting services (the proxy for Claude Code and the forwarder to the model
+server for OpenCode), so agents in different projects can't reach each other
+over the network either. What's still shared is read-only: the images, your
+per-user configuration and the agent instructions, plus the model server for
+OpenCode.
 
 A project's data is kept together in its directory in
 `~/.local/share/agent-sandbox/projects/`, along with the project's path and the
@@ -353,8 +352,8 @@ docker build --pull --no-cache --platform linux/arm64 --target opencode -t openc
 
 For the `amd64` image, replace both `arm64` with `amd64`. The image names must
 match the `image` of the agent in `compose/<agent>.yml`, or the new image isn't
-used. Also pull the latest images of the supporting services, the proxy and, for
-OpenCode, the forwarder to the model server:
+used. Also pull the latest images of the supporting services, the proxy for
+Claude Code and the forwarder to the model server for OpenCode:
 
 ```bash
 docker pull kalaksi/tinyproxy:latest

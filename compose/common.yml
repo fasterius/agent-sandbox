@@ -9,14 +9,6 @@ services:
       - no-new-privileges:true
       - seccomp:builtin
 
-  proxy:
-    extends:
-      service: hardened
-    image: kalaksi/tinyproxy:latest
-    volumes:
-      - ../proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
-      - ${PROXY_FILTER:?PROXY_FILTER must be set}:/etc/tinyproxy/filter:ro
-
   agent:
     extends:
       service: hardened
@@ -24,10 +16,6 @@ services:
     # Interactivity
     stdin_open: true
     tty: true
-    environment:
-      HTTPS_PROXY: http://proxy:8888
-      HTTP_PROXY: http://proxy:8888
-      NO_PROXY: localhost,127.0.0.1
     # The project is mounted at the same path as on the host, so that agents
     # that key their per-project data by path (_e.g._ Claude Code's history and
     # memory) keep it separate per project

@@ -249,13 +249,18 @@ echo "Running ${COMMAND[0]} in the $AGENT sandbox with $EGRESS egress" \
     "$SANDBOX_MEMORY memory, $SANDBOX_CPUS CPUs, $SANDBOX_PIDS processes)" >&2
 
 # Run the agent or command, forwarding any extra args; this also starts the
-# supporting services it depends on in this mode. Afterwards, remove the
-# project's containers and networks, unless another session of the project is
-# still running; an interrupt (Ctrl-C) is left to the agent, so that this
-# script still gets to clean up
-trap : INT
+# supporting services it depends on in this mode. An interrupt (Ctrl-C) is left
+# to the agent, and a closed terminal or a termination only ends `docker compose
+# run`, so that this script still gets to clean up. As `docker compose run`
+# leaves the container running when it is ended that way, the container is
+# removed afterwards; then the project's containers and networks are removed as
+# well, unless another session of the project is still running
+trap : INT HUP TERM
+CONTAINER="$COMPOSE_PROJECT_NAME-$AGENT-run-$$"
 status=0
-docker compose run "${RUN_ARGS[@]}" "$AGENT" "${COMMAND[@]}" || status=$?
+docker compose run --name "$CONTAINER" "${RUN_ARGS[@]}" "$AGENT" \
+    "${COMMAND[@]}" || status=$?
+docker rm -f "$CONTAINER" > /dev/null 2>&1 || true
 if ! agent_running "$COMPOSE_PROJECT_NAME"; then
     remove_project "$COMPOSE_PROJECT_NAME"
 fi

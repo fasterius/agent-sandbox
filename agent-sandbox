@@ -92,7 +92,6 @@ source "$SANDBOX_DIR/lib/project.sh"
 # the repository, in directories covered by the default `blocked-dirs`
 CONFIG_DIR="$HOME/.config/agent-sandbox"
 DATA_DIR="$HOME/.local/share/agent-sandbox"
-STATE_DIR="$HOME/.local/state/agent-sandbox"
 
 if [[ "$CLEANUP" == true ]]; then
     cleanup "$DATA_DIR"
@@ -143,8 +142,8 @@ if [[ -n "${SANDBOX_LLM_API_KEY_FILE:-}" ]]; then
 elif [[ -f "$HOME/.local/share/llama.cpp/api-key" ]]; then
     LLM_API_KEY_FILE="$HOME/.local/share/llama.cpp/api-key"
 else
-    LLM_API_KEY_FILE="$STATE_DIR/no-api-key"
-    mkdir -p "$STATE_DIR"
+    LLM_API_KEY_FILE="$DATA_DIR/no-api-key"
+    mkdir -p "$DATA_DIR"
     touch "$LLM_API_KEY_FILE"
 fi
 export LLM_API_KEY_FILE
@@ -152,7 +151,7 @@ export LLM_API_KEY_FILE
 # Claude Code logs in with a long-lived token from `claude setup-token`, which
 # only gives access to the model; it's read from a file on the host and passed
 # on in the environment. Only a `--shell` runs without it, _e.g._ to create one
-CLAUDE_TOKEN_FILE="${SANDBOX_CLAUDE_TOKEN_FILE:-$DATA_DIR/claude-oauth-token}"
+CLAUDE_TOKEN_FILE="$DATA_DIR/claude-oauth-token"
 if [[ "$AGENT" == claude && -f "$CLAUDE_TOKEN_FILE" ]]; then
     CLAUDE_CODE_OAUTH_TOKEN="$(tr -d '[:space:]' < "$CLAUDE_TOKEN_FILE")"
     export CLAUDE_CODE_OAUTH_TOKEN

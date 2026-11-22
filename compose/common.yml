@@ -21,7 +21,7 @@ services:
     # memory) keep it separate per project
     working_dir: ${PROJECT_DIR:?PROJECT_DIR must be set}
     volumes:
-      - ${PROJECT_DIR}:${PROJECT_DIR}
+      - ${PROJECT_DIR}:${PROJECT_DIR}${SELINUX_LABEL:-}
     # Upper limits rather than reservations. The PID limit counts threads as
     # well as processes
     mem_limit: ${SANDBOX_MEMORY:?SANDBOX_MEMORY must be set}

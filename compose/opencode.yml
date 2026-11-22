@@ -42,21 +42,14 @@ services:
       OPENCODE_DISABLE_LSP_DOWNLOAD: "true"
     volumes:
       # `AGENT_HOME` is set by `agent-sandbox`
-      - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev
+      - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev${SELINUX_LABEL:-}
       # The connection to the model server, which the user's config can't change
-      - ../opencode/opencode.jsonc:/etc/opencode/opencode.jsonc:ro
-    secrets:
-      - llm-api-key
+      - ../opencode/opencode.jsonc:/etc/opencode/opencode.jsonc:ro${SELINUX_OPT:-}
+      - ${LLM_API_KEY_FILE:?LLM_API_KEY_FILE must be set}:/run/secrets/llm-api-key:ro${SELINUX_OPT:-}
     networks:
       - opencode-net
     depends_on:
       - llm
-
-secrets:
-  # The model server's API key (empty for a server without one), mounted at
-  # `/run/secrets/llm-api-key`; `LLM_API_KEY_FILE` is set by `agent-sandbox`
-  llm-api-key:
-    file: ${LLM_API_KEY_FILE:?LLM_API_KEY_FILE must be set}
 
 networks:
   opencode-net:

@@ -8,8 +8,8 @@ services:
       service: hardened
     image: kalaksi/tinyproxy:latest
     volumes:
-      - ../proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
-      - ../proxy/model-claude:/etc/tinyproxy/filter:ro
+      - ../proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro${SELINUX_OPT:-}
+      - ../proxy/model-claude:/etc/tinyproxy/filter:ro${SELINUX_OPT:-}
     networks:
       - claude-net
       - proxy-egress
@@ -35,7 +35,7 @@ services:
       CLAUDE_CODE_OAUTH_TOKEN:
     volumes:
       # `AGENT_HOME` is set by `agent-sandbox`
-      - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev
+      - ${AGENT_HOME:?AGENT_HOME must be set}:/home/dev${SELINUX_LABEL:-}
     networks:
       - claude-net
     depends_on:

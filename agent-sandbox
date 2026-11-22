@@ -90,6 +90,20 @@ source "$SANDBOX_DIR/lib/instructions.sh"
 source "$SANDBOX_DIR/lib/git.sh"
 source "$SANDBOX_DIR/lib/project.sh"
 
+# On SELinux hosts (e.g. Fedora), bind-mounted host paths keep their host label
+# and are unreadable in the container. `:z` makes Docker relabel a mount with a
+# shared container label; `SELINUX_LABEL` is for mounts without options and
+# `SELINUX_OPT` for appending to existing ones (e.g. `:ro`). Both are empty on
+# macOS and on Linux without SELinux, and are exported for the Compose files
+SELINUX_LABEL=""
+SELINUX_OPT=""
+if [[ "$(uname -s)" == Linux ]] && command -v selinuxenabled > /dev/null &&
+    selinuxenabled; then
+    SELINUX_LABEL=":z"
+    SELINUX_OPT=",z"
+fi
+export SELINUX_LABEL SELINUX_OPT
+
 # Per-user config, agent home directories and generated files live outside of
 # the repository, in directories covered by the default `blocked-dirs`
 CONFIG_DIR="$HOME/.config/agent-sandbox"
@@ -214,7 +228,7 @@ mount_config() {
     elif [[ ! -e "$path" ]]; then
         : > "$path"
     fi
-    RUN_ARGS+=(-v "$(readlink -f "$source"):/home/dev/$AGENT_CONFIG/$target:ro")
+    RUN_ARGS+=(-v "$(readlink -f "$source"):/home/dev/$AGENT_CONFIG/$target:ro$SELINUX_OPT")
 }
 for file in "$USER_AGENT_CONFIG"/*; do
     if [[ -e "$file" && "$(basename "$file")" != "$INSTRUCTIONS" ]]; then
@@ -233,7 +247,14 @@ mount_config "$GENERATED_INSTRUCTIONS" "$INSTRUCTIONS"
 
 # Mount the project's git settings and hooks read-only
 while IFS= read -r mount; do
-    RUN_ARGS+=(-v "$mount")
+    # `git_mounts` may or may not give options after the container path
+    if [[ -z "$SELINUX_LABEL" ]]; then
+        RUN_ARGS+=(-v "$mount")
+    elif [[ "$mount" == *:*:* ]]; then
+        RUN_ARGS+=(-v "$mount$SELINUX_OPT")
+    else
+        RUN_ARGS+=(-v "$mount$SELINUX_LABEL")
+    fi
 done < <(git_mounts "$PWD")
 
 # Run the agent itself, or with `--shell` Bash or the given command

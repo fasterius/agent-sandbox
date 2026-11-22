@@ -127,6 +127,9 @@ esac
 PROJECT_ID="$(project_id "$PWD")"
 PROJECT_DATA="$DATA_DIR/projects/$PROJECT_ID"
 export SANDBOX_ARCH SANDBOX_MEMORY SANDBOX_CPUS SANDBOX_PIDS
+# The image's user gets the host user's IDs, so that it can write to the mounted
+# directories on Linux
+export HOST_UID="$(id -u)" HOST_GID="$(id -g)"
 export PROJECT_DIR="$PWD"
 export AGENT_HOME="$PROJECT_DATA/$AGENT"
 export COMPOSE_PROJECT_NAME="$AGENT-sandbox-$EGRESS-$PROJECT_ID"

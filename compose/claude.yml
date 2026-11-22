@@ -21,6 +21,9 @@ services:
     build:
       context: ..
       target: claude
+      args:
+        UID: ${HOST_UID:?HOST_UID must be set}
+        GID: ${HOST_GID:?HOST_GID must be set}
     # One image per architecture, so that switching does not overwrite the
     # other; the platform itself is set in `common.yml`
     image: claude-sandbox:${SANDBOX_ARCH:?SANDBOX_ARCH must be set}

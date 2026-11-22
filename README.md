@@ -307,14 +307,16 @@ cached build would keep their old versions:
 
 ```bash
 cd /path/to/this/repo
-docker build --pull --no-cache --platform linux/arm64 --target claude -t claude-sandbox:arm64 .
-docker build --pull --no-cache --platform linux/arm64 --target opencode -t opencode-sandbox:arm64 .
+docker build --pull --no-cache --platform linux/arm64 --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" --target claude -t claude-sandbox:arm64 .
+docker build --pull --no-cache --platform linux/arm64 --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" --target opencode -t opencode-sandbox:arm64 .
 ```
 
 For the `amd64` image, replace both `arm64` with `amd64`. The image names must
 match the `image` of the agent in `compose/<agent>.yml`, or the new image isn't
-used. Also pull the latest images of the supporting services, the proxy for
-Claude Code and the forwarder to the model server for OpenCode:
+used. The build arguments give the image's user your user and group IDs, which
+it needs on Linux to write to your project and its home directory. Also pull the
+latest images of the supporting services, the proxy for Claude Code and the
+forwarder to the model server for OpenCode:
 
 ```bash
 docker pull kalaksi/tinyproxy:latest

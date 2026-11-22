@@ -89,6 +89,7 @@ source "$SANDBOX_DIR/lib/cleanup.sh"
 source "$SANDBOX_DIR/lib/instructions.sh"
 source "$SANDBOX_DIR/lib/git.sh"
 source "$SANDBOX_DIR/lib/project.sh"
+source "$SANDBOX_DIR/lib/llm.sh"
 
 # On SELinux hosts (e.g. Fedora), bind-mounted host paths keep their host label
 # and are unreadable in the container. `:z` makes Docker relabel a mount with a
@@ -108,6 +109,12 @@ export SELINUX_LABEL SELINUX_OPT
 # the repository, in directories covered by the default `blocked-dirs`
 CONFIG_DIR="$HOME/.config/agent-sandbox"
 DATA_DIR="$HOME/.local/share/agent-sandbox"
+
+# Per-user settings, in Bash syntax (_e.g._ `SANDBOX_LLM_URL=https://...`); the
+# file is not mounted into the containers
+if [[ -f "$CONFIG_DIR/env" ]]; then
+    source "$CONFIG_DIR/env"
+fi
 
 if [[ "$CLEANUP" == true ]]; then
     cleanup "$DATA_DIR"
@@ -166,6 +173,15 @@ else
     touch "$LLM_API_KEY_FILE"
 fi
 export LLM_API_KEY_FILE
+
+# The model server that OpenCode's forwarder connects to: the one on port 8080
+# of the host, unless `SANDBOX_LLM_URL` (_e.g._ `https://llm.example.net`) names
+# a remote one
+LLM_UPSTREAM="tcp-connect:host.docker.internal:8080"
+if [[ "$AGENT" == opencode && -n "${SANDBOX_LLM_URL:-}" ]]; then
+    LLM_UPSTREAM="$(llm_upstream "$SANDBOX_LLM_URL")" || exit 1
+fi
+export LLM_UPSTREAM
 
 # Claude Code logs in with a long-lived token from `claude setup-token`, which
 # only gives access to the model; it's read from a file on the host and passed

@@ -1,8 +1,8 @@
-# OpenCode against a local model server (e.g. llama.cpp) running natively on the
-# host on port 8080; for use with `agent-sandbox opencode`
+# OpenCode against a model server (e.g. llama.cpp), by default running natively
+# on the host on port 8080; for use with `agent-sandbox opencode`
 services:
-  # Forwards plain TCP from the internal network to the model server on the
-  # host, so that the agent can reach it without any other route out
+  # Forwards plain TCP from the internal network to the model server, so that
+  # the agent can reach it without any other route out
   llm:
     extends:
       file: common.yml
@@ -11,7 +11,8 @@ services:
     user: "65534:65534"
     command:
       - tcp-listen:8080,fork,reuseaddr
-      - tcp-connect:host.docker.internal:8080
+      # `LLM_UPSTREAM` is set by `agent-sandbox`
+      - ${LLM_UPSTREAM:?LLM_UPSTREAM must be set}
     # Docker Desktop provides `host.docker.internal` already; this makes it
     # resolve on plain Linux Docker as well
     extra_hosts:

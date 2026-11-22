@@ -34,8 +34,9 @@ some of them. In particular:
 ## Requirements
 
 - Docker Engine 23 and Docker Compose 2.33 or later.
-- For OpenCode: a model server with an OpenAI-compatible API on port 8080 of the
-  host (see [OpenCode with a local model](#opencode-with-a-local-model)).
+- For OpenCode: a model server with an OpenAI-compatible API, on port 8080 of
+  the host or on a remote host (see
+  [OpenCode with a local model](#opencode-with-a-local-model)).
 
 ## Installation
 
@@ -98,6 +99,7 @@ optional:
 | -------------- | ------------------------------------------- |
 | `blocked-dirs` | Adds to [`blocked-dirs`](./blocked-dirs)    |
 | `AGENTS.md`    | Instructions for all agents                 |
+| `env`          | Sets variables such as `SANDBOX_LLM_URL`    |
 | `<agent>/`     | Config files and directories for that agent |
 
 Each file or directory in `claude/` or `opencode/` replaces the one with the
@@ -177,6 +179,18 @@ the default provider here. The connection is set up in
 [`opencode/opencode.jsonc`](./opencode/opencode.jsonc), which is mounted as
 OpenCode's system config at `/etc/opencode/`: it defines the provider `llamacpp`
 at `http://llm.internal:8080/v1` and disables session sharing.
+
+To use a model server on another host instead, _e.g._ one on your Tailscale
+network, set `SANDBOX_LLM_URL` to its address, such as
+`https://llm.example.ts.net` (`http://` or `https://`, an optional port and no
+path), in the environment or in `~/.config/agent-sandbox/env` (in Bash syntax,
+_e.g._ `SANDBOX_LLM_URL=https://llm.example.ts.net`). The forwarder then
+connects to that address instead of the host's port 8080. The host name is
+resolved on the host, so that names that only the host's resolver knows (_e.g._
+Tailscale's) work, and for `https` the certificate is checked against the name.
+The agent still only talks to the forwarder, so the `closed` mode works the
+same. The address is IPv4 only, and the API key (see below) must be the one that
+the remote server expects.
 
 If the model server requires an API key, keep it in a file on the host, by
 default `~/.local/share/llama.cpp/api-key`, or set `SANDBOX_LLM_API_KEY_FILE` to

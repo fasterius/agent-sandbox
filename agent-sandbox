@@ -110,10 +110,12 @@ export SELINUX_LABEL SELINUX_OPT
 CONFIG_DIR="$HOME/.config/agent-sandbox"
 DATA_DIR="$HOME/.local/share/agent-sandbox"
 
-# Per-user settings, in Bash syntax (_e.g._ `SANDBOX_LLM_URL=https://...`); the
-# file is not mounted into the containers
-if [[ -f "$CONFIG_DIR/env" ]]; then
-    source "$CONFIG_DIR/env"
+# Machine-specific settings, in Bash syntax (_e.g._
+# `SANDBOX_LLM_URL=https://...`); they are kept in the data directory, as the
+# config directory may be under version control, and are not mounted into the
+# containers
+if [[ -f "$DATA_DIR/env" ]]; then
+    source "$DATA_DIR/env"
 fi
 
 if [[ "$CLEANUP" == true ]]; then
